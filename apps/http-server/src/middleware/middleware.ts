@@ -10,14 +10,13 @@ export default function authMiddleware(req: CustomRequest, res: Response, next: 
         return res.status(400).json({
             message: "Wrong Credentials"
         })
-
     }
 
     const token = (auth as string).split(' ')[1];
 
     try {
-        const decoded = jwt.verify(String(token), JWT_SECRET);
-        req.userId = decoded;
+        const { userId } : any = jwt.verify(String(token), JWT_SECRET);
+        req.userId = userId;
         next();
     } 
     catch (error) {
