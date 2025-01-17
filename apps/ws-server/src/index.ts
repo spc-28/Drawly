@@ -32,17 +32,35 @@ ws.on("connection", (socket, request)=>{
 
         if(parsedData.type == 'join') {
             const user = users.find(u=>u.socket===socket);
+            
+            //@ts-ignore
+            if(user && !user.rooms.includes(parsedData.roomId))
             //@ts-ignore
             user?.rooms.push(parsedData.roomId);
         }
 
         if(parsedData.type == 'leave') {
             const user = users.find(u=>u.socket===socket);
-            //@ts-ignore
-            const index = user?.rooms.indexOf(parsedData.roomId);
-            if(index){
-                user?.rooms.splice(index, 1);
+            if(user){
+                if (Array.isArray(user?.rooms)) {
+                    //@ts-ignore
+                    const index = user.rooms.indexOf(parsedData.roomId);
+                
+                    console.log('Index:', index);
+                
+                    if (index !== -1) {
+                        user.rooms.splice(index, 1);
+                        console.log('Updated rooms:', user.rooms);
+                    } 
+                    else {
+                        console.log('Room not found:', parsedData.roomId);
+                    }
+                } 
+                else {
+                    console.log('user.rooms is not an array or undefined');
+                }
             }
+            
         }
 
         if(parsedData.type == 'chat') {
