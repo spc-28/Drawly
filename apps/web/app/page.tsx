@@ -1,10 +1,10 @@
-import styles from "./page.module.css";
+import Block from "@repo/ui/block";
 
 
 export default function Home() {
   return (
-    <div className={styles.page}>
-      
+    <div className="w-screen">
+      <Block/>
     </div>
   );
 }
