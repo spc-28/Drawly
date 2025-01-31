@@ -13,8 +13,11 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "",
-  description: "",
+  title: "Drawly",
+  description: "Present your way",
+  icons: {
+    icon: '/image.png'
+  }
 };
 
 export default function RootLayout({

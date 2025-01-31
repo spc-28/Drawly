@@ -1,10 +1,10 @@
-import Block from "@repo/ui/block";
+import Draw from "./draw/[roomId]/page";
 
 
 export default function Home() {
   return (
-    <div className="w-screen">
-      <Block/>
+    <div className="h-screen ">
+
     </div>
   );
 }

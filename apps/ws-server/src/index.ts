@@ -1,8 +1,8 @@
 import { WebSocketServer } from "ws";
 import { WS_PORT } from "@repo/backend-common/config";
 import { User } from "./types/userType";
-import { checkUser } from "./utils/checkUser";
 import { prismaClient } from "@repo/db/client";
+import { checkUser } from "@repo/common/check";
 
 const ws = new WebSocketServer({port: Number(WS_PORT)});
 
@@ -66,13 +66,15 @@ ws.on("connection", (socket, request)=>{
         if(parsedData.type == 'chat') {
             const { roomId, message } = parsedData;
             try{
-                await prismaClient.chat.create({
-                data:{
-                    roomId,
-                    message,
-                    userId
+                if(message.shape!="eraser"){
+                    await prismaClient.chat.create({
+                    data:{
+                        roomId,
+                        message,
+                        userId
+                    }
+                })
                 }
-            })
             }
             catch(error) {
                 console.log(error);
@@ -82,7 +84,9 @@ ws.on("connection", (socket, request)=>{
             users.forEach((user)=>{
                 //@ts-ignore
                 if(user.rooms.includes(roomId)){
-                    user.socket.send(JSON.stringify(message));
+                    if(user.userId!==userId){
+                        user.socket.send(JSON.stringify(message));
+                    }
                 }
             })
             

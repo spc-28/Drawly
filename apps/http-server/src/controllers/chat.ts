@@ -29,3 +29,28 @@ export async function getChats(req: CustomRequest, res: Response) {
         return;
     }
 }
+
+export async function deleteChat(req: CustomRequest, res: Response) {
+    const { code } = req.body;
+    try{
+        const chat = await prismaClient.chat.deleteMany({
+            where:{
+                message: {
+                    path: ['code'],
+                    equals: code,
+                }
+            }
+        })
+        res.status(200).json({
+            chat
+        })
+        return;
+    }
+    catch(error){
+        res.status(400).json({
+            message: "unable to fetch messages",
+            error
+        })
+        return;
+    }
+}
