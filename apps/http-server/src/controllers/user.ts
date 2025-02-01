@@ -18,8 +18,10 @@ export async function signUp(req:Request, res: Response) {
             data: data
         })
 
+        const token = jwt.sign({userId: user?.id}, JWT_SECRET);
+
         res.status(200).json({
-            userId: user.id
+            token
         })
         return; 
     }
@@ -49,6 +51,10 @@ export async function signIn(req:Request, res: Response) {
                 username: data.username
             }
         })
+
+        if(user?.password != data.password){
+            throw new Error("Invalid Password");
+        }
 
         const token = jwt.sign({userId: user?.id}, JWT_SECRET);
 
