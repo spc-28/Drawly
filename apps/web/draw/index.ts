@@ -1,6 +1,6 @@
 import { Circle, Line, Rectangle, Text } from "../types/shape";
 import { drawCircle, drawLine, drawPencil, drawRectangle, writeText } from "./utils/drawing";
-import { checkUser } from '@repo/common/check';
+import { checkUser } from '@repo/common/types';
 import { getRandomHexColor, rgbaToHex } from "./utils/virtual";
 import { deleteChat, getExistingShapes } from "./utils/request";
 
