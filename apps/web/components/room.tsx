@@ -1,6 +1,6 @@
 "use client"
 
-import { WS_PORT } from "@repo/backend-common/config";
+import { WS_LINK } from "@repo/backend-common/config";
 import { useEffect, useState } from "react";
 import Canvas from "./canvas";
 
@@ -8,7 +8,7 @@ export default function Room({ roomId }:{ roomId: number }) {
     const [ws, setWs] = useState<WebSocket>();
 
     useEffect(()=>{
-        const wss = new WebSocket(`ws://localhost:${WS_PORT}/?token=${localStorage.getItem('token')}`);
+        const wss = new WebSocket(`${WS_LINK}/?token=${localStorage.getItem('token')}`);
         
         wss.onopen = ()=>{
             wss.send(JSON.stringify({

@@ -1,9 +1,9 @@
-import { HTTP_PORT } from "@repo/backend-common/config";
+import { HTTP_LINK } from "@repo/backend-common/config";
 
 export async function signIn(username:string, password:string):Promise<{token:string}> {
   try {
     const response = await fetch(
-      `http://localhost:${HTTP_PORT}/api/v1/user/signIn`,
+      `${HTTP_LINK}/api/v1/user/signIn`,
       {
         method: "POST",
         headers: {
@@ -32,7 +32,7 @@ export async function signIn(username:string, password:string):Promise<{token:st
 export async function signUp(username:string, password:string, name:string):Promise<{token:string}> {
     try {
       const response = await fetch(
-        `http://localhost:${HTTP_PORT}/api/v1/user/signUp`,
+        `${HTTP_LINK}/api/v1/user/signUp`,
         {
           method: "POST",
           headers: {
@@ -62,7 +62,7 @@ export async function signUp(username:string, password:string, name:string):Prom
   export async function createRoom():Promise<any> {
     try {
       const response = await fetch(
-        `http://localhost:${HTTP_PORT}/api/v1/room/createRoom`,
+        `${HTTP_LINK}/api/v1/room/createRoom`,
         {
           method: "POST",
           headers: {

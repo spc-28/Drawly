@@ -1,9 +1,9 @@
-import { HTTP_PORT } from "@repo/backend-common/config";
+import { HTTP_LINK } from "@repo/backend-common/config";
 
 export async function getExistingShapes(roomId: number):Promise<[]> {
   try {
     const response = await fetch(
-      `http://localhost:${HTTP_PORT}/api/v1/chat/${roomId}`,
+      `${HTTP_LINK}/api/v1/chat/${roomId}`,
       {
         method: "GET",
         headers: {
@@ -28,7 +28,7 @@ export async function getExistingShapes(roomId: number):Promise<[]> {
 export async function deleteChat(code: string){
   try {
     const response = await fetch(
-      `http://localhost:${HTTP_PORT}/api/v1/chat/`,
+      `${HTTP_LINK}/api/v1/chat/`,
       {
         method: "DELETE",
         headers: {

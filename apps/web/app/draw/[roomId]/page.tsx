@@ -1,7 +1,10 @@
 import { Toaster } from "react-hot-toast";
 import Room from "../../../components/room";
 
-export default async function Draw({ params }: { params:{ roomId:string } }) {
+type tParams = Promise<{ roomId: string }>;
+
+export default async function Draw({ params }: { params:tParams }) {
+
     const { roomId } = await params;
     
     return(
