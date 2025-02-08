@@ -5,6 +5,7 @@ import { render } from "./renderer";
 
 export class EventHandlers {
     private drawRoom: DrawRoom;
+    private pencilCode: string = "";
 
     constructor(drawRoom: DrawRoom) {
             this.drawRoom = drawRoom;
@@ -24,6 +25,7 @@ export class EventHandlers {
 
         if (this.drawRoom.getTool() == "Pencil" || this.drawRoom.getTool() == "Line") {
             this.drawRoom.getCtx().fillStyle = this.drawRoom.getColor() || "#ffffff";
+            this.pencilCode = getRandomHexColor();
         }
     }
 
@@ -37,7 +39,7 @@ export class EventHandlers {
                     toY: event.clientY,
                     shape: "pencil",
                     color: this.drawRoom.getColor(),
-                    code: getRandomHexColor()
+                    code: this.pencilCode
                 }
 
                 const arr = drawPencil(this.drawRoom.getCtx(), pencil);
@@ -154,7 +156,7 @@ export class EventHandlers {
                 toY: event.clientY,
                 shape: "pencil",
                 color: this.drawRoom.getColor(),
-                code: getRandomHexColor()
+                code: this.pencilCode
             }
             this.drawRoom.setPathData(pencil);
             this.drawRoom.messageHandler.sendMessage(this.drawRoom.getPathData());
