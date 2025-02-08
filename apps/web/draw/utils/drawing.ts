@@ -1,4 +1,4 @@
-import { Circle, Line, Rectangle, Text } from "../../types/shape";
+import { Circle, Line, Rectangle, Text } from "../types/shape";
 
 export function drawRectangle(ctx: CanvasRenderingContext2D, rect: Rectangle, color?: string) {
     if(color && color[0] == '#'){
@@ -58,6 +58,6 @@ export function writeText(ctx: CanvasRenderingContext2D, text:Text, color?: stri
 }
 
 export function drawPencil(ctx: CanvasRenderingContext2D, pencil:Line, color?: string):[number,number] {
-    drawLine(ctx, pencil);
+    drawLine(ctx, pencil, color);
     return [pencil.toX, pencil.toY];
 }

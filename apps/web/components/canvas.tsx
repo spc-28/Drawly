@@ -7,14 +7,11 @@ import {
   Minus,
   MousePointer2,
   Pencil,
-  Plus,
   Share,
   Square,
   Type,
 } from "lucide-react";
-import image from "../public/image.png";
-import Image from "next/image";
-import DrawRoom from "../draw";
+import DrawRoom from "../draw/drawRoom";
 import toast from "react-hot-toast";
 
 export default function Canvas({
@@ -27,7 +24,7 @@ export default function Canvas({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const virtualRef = useRef<HTMLCanvasElement | null>(null);
   const [session, setSession] = useState<DrawRoom>();
-  const [logo, setLogo] = useState<boolean>(true);
+  //const [logo, setLogo] = useState<boolean>(true);
 
   const handleClick = (tool: string) => {
     session?.setTool(tool);

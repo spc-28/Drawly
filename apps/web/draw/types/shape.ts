@@ -23,3 +23,9 @@ export interface Line extends Shape {
     toX: number;
     toY: number;
 }
+
+export interface Eraser {
+    x:number;
+    y:number;
+    shape: string;
+}
