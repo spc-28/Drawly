@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { CustomRequest } from "../types/requestType";
+import { CustomRequest } from "../types/requestType.js";
 import { prismaClient } from "@repo/db/client";
 
 export async function getChats(req: CustomRequest, res: Response) {

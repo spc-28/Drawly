@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { CustomRequest } from "../types/requestType";
+import { CustomRequest } from "../types/requestType.js";
 import { createRoomSchema } from "@repo/common/types";
 import { prismaClient } from "@repo/db/client";
 

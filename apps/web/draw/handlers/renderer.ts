@@ -3,10 +3,12 @@ import DrawRoom from "../drawRoom";
 
 
 class Renderer {
-    static clearCanvas(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    static clearCanvas(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, scale: number, offsetX: number, offsetY: number) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#121212";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
     }
 
     static renderShapes(drawRoom: DrawRoom) {
@@ -19,6 +21,6 @@ class Renderer {
 }
 
 export function render(drawRoom: DrawRoom) {
-    Renderer.clearCanvas(drawRoom.getCtx(), drawRoom.getCanvas());
+    Renderer.clearCanvas(drawRoom.getCtx(), drawRoom.getCanvas(), drawRoom.getScale(), drawRoom.getOffsetX(), drawRoom.getOffsetY());
     Renderer.renderShapes(drawRoom);
 }

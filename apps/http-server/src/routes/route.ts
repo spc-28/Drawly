@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { userRouter } from "./user";
-import { roomRouter } from "./room";
-import { chatRouter } from "./chat";
+import { userRouter } from "./user.js";
+import { roomRouter } from "./room.js";
+import { chatRouter } from "./chat.js";
 
 export const router: Router = Router();
 

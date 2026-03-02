@@ -1,5 +1,5 @@
 import express from "express";
-import { router } from "./routes/route";
+import { router } from "./routes/route.js";
 import { HTTP_PORT } from "@repo/backend-common/config";
 import cors from "cors";
 

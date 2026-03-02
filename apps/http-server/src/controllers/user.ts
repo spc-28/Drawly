@@ -25,10 +25,12 @@ export async function signUp(req:Request, res: Response) {
         })
         return; 
     }
-    catch(error) {
+    catch(error: any) {
+        console.error("signUp error:", error);
         res.status(400).json({
             message: "User creation Failed",
-            error
+            error: error?.message ?? String(error),
+            code: error?.code
         })
         return;
     }

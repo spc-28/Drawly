@@ -3,8 +3,10 @@ import Bar from "./bar";
 import {
   Circle,
   Eraser,
+  Hand,
   Lock,
   Minus,
+  Plus,
   MousePointer2,
   Pencil,
   Share,
@@ -24,15 +26,20 @@ export default function Canvas({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const virtualRef = useRef<HTMLCanvasElement | null>(null);
   const [session, setSession] = useState<DrawRoom>();
+  const [zoomLevel, setZoomLevel] = useState<number>(100);
   //const [logo, setLogo] = useState<boolean>(true);
 
   const handleClick = (tool: string) => {
     session?.setTool(tool);
   };
 
+  const handleZoomChange = (scale: number) => {
+    setZoomLevel(Math.round(scale * 100));
+  };
+
   useEffect(() => {
     if (canvasRef.current && virtualRef.current) {
-      const s = new DrawRoom(canvasRef.current, roomId, ws, virtualRef.current);
+      const s = new DrawRoom(canvasRef.current, roomId, ws, virtualRef.current, handleZoomChange);
       setSession(s);
     }
 
@@ -66,23 +73,49 @@ export default function Canvas({
         width={window.innerWidth}
       ></canvas>
       <div className="self-end flex justify-between w-full z-40 mb-4 px-6 text-[#ECC19C]">
-        <Bar
-          onClick={() => {
-            navigator.clipboard.writeText(
-              `http://localhost:3000/draw/${roomId}`
-            );
-            toast.success("Link Copied");
-          }}
-          classname="gap-10 justify-between px-4 cursor-pointer "
-        >
-          {/* <Minus className="cursor-pointer"/>
-                < div className="w-[20%] text-xl">100%</div>
-                <Plus className="cursor-pointer"/> */}
-          <Share />
-        </Bar>
+        <div className="flex gap-3">
+          <Bar classname="gap-3 items-center justify-between px-4">
+            <Minus
+              className="cursor-pointer"
+              onClick={() => session?.zoomOut()}
+            />
+            <div
+              className="w-14 text-center text-sm cursor-pointer select-none"
+              onClick={() => {
+                session?.resetZoom();
+                setZoomLevel(100);
+              }}
+              title="Reset zoom"
+            >
+              {zoomLevel}%
+            </div>
+            <Plus
+              className="cursor-pointer"
+              onClick={() => session?.zoomIn()}
+            />
+          </Bar>
+          <Bar
+            onClick={() => {
+              navigator.clipboard.writeText(
+                `http://localhost:3000/draw/${roomId}`
+              );
+              toast.success("Link Copied");
+            }}
+            classname="px-4 cursor-pointer"
+          >
+            <Share />
+          </Bar>
+        </div>
         <Bar classname="justify-between px-9 ">
           <div className="flex items-center gap-10 h-full">
             <MousePointer2 className="cursor-pointer" />
+            <Hand
+              onClick={() => {
+                handleClick("Hand");
+                toast.success("Pan selected");
+              }}
+              className="cursor-pointer"
+            />
             <Lock className="cursor-pointer" />
             <div className="border-l-2 border-[#ECC19C] h-[55%]"></div>
           </div>

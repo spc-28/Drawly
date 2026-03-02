@@ -37,7 +37,7 @@ function App() {
 
 
     return (
-        <div className="min-h-screen bg-black flex items-center justify-center p-4 relative">
+        <div className="min-h-fit h-screen bg-black flex flex-col items-center justify-center p-4 relative">
             <div className="w-full max-w-md relative">
                 {/* Glow Effects */}
                 <div className="absolute -inset-1 bg-[#1C726D] rounded-2xl blur-2xl opacity-75"></div>
@@ -142,7 +142,15 @@ function App() {
                         </p>
                     </div>
                 </div>
-            </div>
+            </div>{isLogin?
+            <div className='text-white mt-4'>
+                <p>Sign In with users</p>
+                <p>user 1 email: user1@domain.com</p>
+                <p>user 1 password: 1234567890</p>
+                <br/>
+                <p>user 2 email: user2@domain.com</p>
+                <p>user 2 password: 1234567890</p>
+            </div>:""}
         </div>
     );
 }

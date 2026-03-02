@@ -1,6 +1,6 @@
 import { NextFunction, Response } from "express";
 import jwt from "jsonwebtoken";
-import { CustomRequest } from "../types/requestType";
+import { CustomRequest } from "../types/requestType.js";
 import { JWT_SECRET} from "@repo/backend-common/config";
 
 export default function authMiddleware(req: CustomRequest, res: Response, next: NextFunction) {

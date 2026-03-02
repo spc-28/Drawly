@@ -1,6 +1,6 @@
 import { WebSocketServer } from "ws";
 import { WS_PORT } from "@repo/backend-common/config";
-import { User } from "./types/userType";
+import { User } from "./types/userType.js";
 import { prismaClient } from "@repo/db/client";
 import { checkUser } from "@repo/common/types";
 

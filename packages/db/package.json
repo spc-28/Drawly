@@ -3,20 +3,30 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
+    "build": "tsc -b",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "exports": {
-    "./client": "./src/index.ts"
+    "./client": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
-    "prisma": "6.2.1"
+    "@types/node": "^20",
+    "@types/pg": "^8.11.10",
+    "prisma": "7.4.2"
   },
   "dependencies": {
-    "@prisma/client": "6.2.1"
+    "@prisma/adapter-pg": "7.4.2",
+    "@prisma/client": "7.4.2",
+    "dotenv": "^16.4.7",
+    "pg": "^8.13.3"
   }
 }

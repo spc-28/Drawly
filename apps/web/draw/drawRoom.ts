@@ -26,10 +26,15 @@ export default class DrawRoom {
     private color: string = '#ffffff';
     private pathData: Line[] = [];
 
+    private scale: number = 1;
+    private offsetX: number = 0;
+    private offsetY: number = 0;
+    private onZoomChange?: (scale: number) => void;
+
     public eventHandler: EventHandlers;
     public messageHandler: MessageHandler;
 
-    constructor(canvas: HTMLCanvasElement, roomId: number, ws: WebSocket, canvasV: HTMLCanvasElement) {
+    constructor(canvas: HTMLCanvasElement, roomId: number, ws: WebSocket, canvasV: HTMLCanvasElement, onZoomChange?: (scale: number) => void) {
         this.canvas = canvas;
         this.canvasV = canvasV;
         this.roomId = roomId;
@@ -39,6 +44,7 @@ export default class DrawRoom {
         this.ctx.strokeStyle = "white";
         this.ctx.fillStyle = "white";
         this.userId = checkUser(localStorage.getItem('token') || "");
+        this.onZoomChange = onZoomChange;
 
         this.eventHandler = new EventHandlers(this);
         this.messageHandler = new MessageHandler(this);
@@ -85,7 +91,10 @@ export default class DrawRoom {
     getUserId(): string | null { return this.userId; }
     setUserId(value: string | null): void { this.userId = value; }
     getTool(): string { return this.tool; }
-    setTool(value: string): void { this.tool = value; }
+    setTool(value: string): void {
+        this.tool = value;
+        this.eventHandler?.refreshCursor();
+    }
     getPointerStatus(): boolean { return this.pointerStatus; }
     setPointerStatus(value: boolean): void { this.pointerStatus = value; }
     getRectangles(): Rectangle[] { return this.rectangles; }
@@ -101,11 +110,48 @@ export default class DrawRoom {
     getPathData(): Line[] { return this.pathData; }
     setPathData(value: Line): void { this.pathData.push(value); }
 
+    getScale(): number { return this.scale; }
+    getOffsetX(): number { return this.offsetX; }
+    getOffsetY(): number { return this.offsetY; }
+
+    toWorldX(screenX: number): number { return (screenX - this.offsetX) / this.scale; }
+    toWorldY(screenY: number): number { return (screenY - this.offsetY) / this.scale; }
+
+    zoom(factor: number, centerX?: number, centerY?: number): void {
+        const cx = centerX ?? this.canvas.width / 2;
+        const cy = centerY ?? this.canvas.height / 2;
+        const newScale = Math.min(Math.max(this.scale * factor, 0.1), 10);
+        this.offsetX = cx - (cx - this.offsetX) * (newScale / this.scale);
+        this.offsetY = cy - (cy - this.offsetY) * (newScale / this.scale);
+        this.scale = newScale;
+        render(this);
+        this.onZoomChange?.(this.scale);
+    }
+
+    zoomIn(): void { this.zoom(1.2, this.canvas.width / 2, this.canvas.height / 2); }
+    zoomOut(): void { this.zoom(1 / 1.2, this.canvas.width / 2, this.canvas.height / 2); }
+
+    resetZoom(): void {
+        this.scale = 1;
+        this.offsetX = 0;
+        this.offsetY = 0;
+        render(this);
+        this.onZoomChange?.(1);
+    }
+
+    pan(dx: number, dy: number): void {
+        this.offsetX += dx;
+        this.offsetY += dy;
+        render(this);
+    }
+
 
     clearCanvasV() {
+        this.ctxV.setTransform(1, 0, 0, 1, 0, 0);
         this.ctxV.clearRect(0, 0, this.canvasV.width, this.canvasV.height);
         this.ctxV.fillStyle = "#121212";
         this.ctxV.fillRect(0, 0, this.canvasV.width, this.canvasV.height);
+        this.ctxV.setTransform(this.scale, 0, 0, this.scale, this.offsetX, this.offsetY);
         if (this.rectangles.length > 0) {
             this.rectangles.map((e: Rectangle) => drawRectangle(this.ctxV, e, e.code));
         }
