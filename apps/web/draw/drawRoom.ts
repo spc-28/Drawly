@@ -2,17 +2,14 @@ import { Rectangle, Circle, Line, Text } from "./types/shape";
 import { checkUser } from "@repo/common/types";
 import { deleteChat, getExistingShapes } from "./utils/request";
 import { render } from "./handlers/renderer";
-import { rgbaToHex } from "./utils/virtual";
-import { drawCircle, drawLine, drawPencil, drawRectangle, writeText } from "./utils/drawing";
 import { EventHandlers } from "./handlers/eventHandlers";
 import { MessageHandler } from "./handlers/messageHandler";
+import { findHitShape } from "./utils/hitTest";
 
 export default class DrawRoom {
     private canvas: HTMLCanvasElement;
-    private canvasV: HTMLCanvasElement;
     private ws: WebSocket;
     private ctx: CanvasRenderingContext2D;
-    private ctxV: CanvasRenderingContext2D;
     private initX: number = 0;
     private initY: number = 0;
     private roomId: number;
@@ -34,13 +31,11 @@ export default class DrawRoom {
     public eventHandler: EventHandlers;
     public messageHandler: MessageHandler;
 
-    constructor(canvas: HTMLCanvasElement, roomId: number, ws: WebSocket, canvasV: HTMLCanvasElement, onZoomChange?: (scale: number) => void) {
+    constructor(canvas: HTMLCanvasElement, roomId: number, ws: WebSocket, onZoomChange?: (scale: number) => void) {
         this.canvas = canvas;
-        this.canvasV = canvasV;
         this.roomId = roomId;
         this.ws = ws;
         this.ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-        this.ctxV = canvasV.getContext("2d") as CanvasRenderingContext2D;
         this.ctx.strokeStyle = "white";
         this.ctx.fillStyle = "white";
         this.userId = checkUser(localStorage.getItem('token') || "");
@@ -66,23 +61,20 @@ export default class DrawRoom {
                         this.texts.push(data);
                     }
                     else if (data.shape == "eraser") {
-                        this.eraser(data.x, data.y);
+                        this.eraseByCode(data.code);
                     }
                     else {
                         data.map((e: Line) => this.pathData.push(e))
                     }
                 })
-                this.clearCanvasV();
                 render(this);
             })
 
     }
 
     getCanvas(): HTMLCanvasElement { return this.canvas; }
-    getCanvasV(): HTMLCanvasElement { return this.canvasV; }
     getWs(): WebSocket { return this.ws; }
     getCtx(): CanvasRenderingContext2D { return this.ctx; }
-    getCtxV(): CanvasRenderingContext2D { return this.ctxV; }
     getInitX(): number { return this.initX; }
     setInitX(value: number): void { this.initX = value; }
     getInitY(): number { return this.initY; }
@@ -146,103 +138,24 @@ export default class DrawRoom {
     }
 
 
-    clearCanvasV() {
-        this.ctxV.setTransform(1, 0, 0, 1, 0, 0);
-        this.ctxV.clearRect(0, 0, this.canvasV.width, this.canvasV.height);
-        this.ctxV.fillStyle = "#121212";
-        this.ctxV.fillRect(0, 0, this.canvasV.width, this.canvasV.height);
-        this.ctxV.setTransform(this.scale, 0, 0, this.scale, this.offsetX, this.offsetY);
-        if (this.rectangles.length > 0) {
-            this.rectangles.map((e: Rectangle) => drawRectangle(this.ctxV, e, e.code));
-        }
-        if (this.circles.length > 0) {
-            this.circles.map((e: Circle) => drawCircle(this.ctxV, e, e.code));
-        }
-        if (this.lines.length > 0) {
-            this.lines.map((e: Line) => drawLine(this.ctxV, e, e.code));
-        }
-        if (this.texts.length > 0) {
-            this.texts.map((e: Text) => writeText(this.ctxV, e, e.code));
-        }
-        if (this.pathData.length > 0) {
-            this.pathData.map((e: Line) => drawPencil(this.ctxV, e, e.code))
-        }
+    eraseByCode(code: string) {
+        this.rectangles = this.rectangles.filter(e => e.code !== code);
+        this.circles = this.circles.filter(e => e.code !== code);
+        this.lines = this.lines.filter(e => e.code !== code);
+        this.texts = this.texts.filter(e => e.code !== code);
+        this.pathData = this.pathData.filter(e => e.code !== code);
+        render(this);
     }
 
-
-    eraser(x: number, y: number) {
-        this.clearCanvasV();
-        const data = this.ctxV.getImageData(x, y, 1, 1).data;
-
-        const c = rgbaToHex(data[0], data[1], data[2], data[3]).slice(0, 7);
-
-        if (c != "#121212") {
-            let toDelete: string | undefined = '';
-
-            if (this.rectangles.length > 0) {
-                this.rectangles = this.rectangles.filter((e) => {
-                    if (e.code != c) {
-                        return e;
-                    }
-                    else {
-                        toDelete = e.code;
-                    }
-
-                })
-            }
-            if (this.circles.length > 0) {
-                this.circles = this.circles.filter((e) => {
-                    if (e.code != c) {
-                        return e;
-                    }
-                    else {
-                        toDelete = e.code;
-                    }
-
-                })
-            }
-            if (this.lines.length > 0) {
-                this.lines = this.lines.filter((e) => {
-                    if (e.code != c) {
-                        return e;
-                    }
-                    else {
-                        toDelete = e.code;
-                    }
-
-                })
-            }
-            if (this.texts.length > 0) {
-                this.texts = this.texts.filter((e) => {
-                    if (e.code != c) {
-                        return e;
-                    }
-                    else {
-                        toDelete = e.code;
-                    }
-
-                })
-            }
-            if (this.pathData.length > 0) {
-                this.pathData = this.pathData.filter((e) => {
-                    if (e.code != c) {
-                        return e;
-                    }
-                    else {
-                        toDelete = e.code;
-                    }
-
-                })
-            }
-            deleteChat(toDelete);
-            render(this);
-            this.clearCanvasV();
-            this.messageHandler.sendMessage({
-                x: x,
-                y: y,
-                shape: "eraser"
-            })
-        }
+    eraser(worldX: number, worldY: number) {
+        const code = findHitShape(
+            this.rectangles, this.circles, this.lines, this.texts, this.pathData,
+            worldX, worldY
+        );
+        if (!code) return;
+        deleteChat(code);
+        this.eraseByCode(code);
+        this.messageHandler.sendMessage({ shape: "eraser", code });
     }
 
     kill() {

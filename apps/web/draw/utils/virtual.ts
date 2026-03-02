@@ -17,14 +17,3 @@ export function getRandomHexColor() {
   usedColors.add(color);
   return color;
 }
-
-
-export function rgbaToHex(r:any, g:any, b:any, a = 1) {
-  const hex: string = [r, g, b].map(val =>
-    val.toString(16).padStart(2, '0')
-  ).join('');
-
-  const alphaHex: string = Math.round(a * 255).toString(16).padStart(2, '0');
-
-  return a === 1 ? `#${hex}` : `#${hex}${alphaHex}`;
-}

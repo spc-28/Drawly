@@ -168,6 +168,10 @@ export class EventHandlers {
                 }
                 drawLine(this.drawRoom.getCtx(), line);
             }
+
+            else if (this.drawRoom.getTool() == "Eraser") {
+                this.drawRoom.eraser(this.toWorldX(event.clientX), this.toWorldY(event.clientY));
+            }
         }
     }
 
@@ -196,9 +200,7 @@ export class EventHandlers {
         }
 
         else if (this.drawRoom.getTool() == "Eraser") {
-            const x = event.clientX;
-            const y = event.clientY;
-            this.drawRoom.eraser(x, y);
+            this.drawRoom.eraser(this.toWorldX(event.clientX), this.toWorldY(event.clientY));
         }
 
         else if (this.drawRoom.getTool() == "Text") {

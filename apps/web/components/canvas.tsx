@@ -24,7 +24,6 @@ export default function Canvas({
   roomId: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const virtualRef = useRef<HTMLCanvasElement | null>(null);
   const [session, setSession] = useState<DrawRoom>();
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   //const [logo, setLogo] = useState<boolean>(true);
@@ -38,8 +37,8 @@ export default function Canvas({
   };
 
   useEffect(() => {
-    if (canvasRef.current && virtualRef.current) {
-      const s = new DrawRoom(canvasRef.current, roomId, ws, virtualRef.current, handleZoomChange);
+    if (canvasRef.current) {
+      const s = new DrawRoom(canvasRef.current, roomId, ws, handleZoomChange);
       setSession(s);
     }
 
@@ -63,12 +62,6 @@ export default function Canvas({
       <canvas
         className="absolute z-20"
         ref={canvasRef}
-        height={window.innerHeight}
-        width={window.innerWidth}
-      ></canvas>
-      <canvas
-        className="absolute z-10"
-        ref={virtualRef}
         height={window.innerHeight}
         width={window.innerWidth}
       ></canvas>

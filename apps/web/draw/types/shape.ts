@@ -25,7 +25,6 @@ export interface Line extends Shape {
 }
 
 export interface Eraser {
-    x:number;
-    y:number;
     shape: string;
+    code: string;
 }

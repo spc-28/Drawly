@@ -24,12 +24,11 @@ export class MessageHandler {
                     drawRoom.setTexts(data);
                 }
                 else if (data.shape == "eraser") {
-                    drawRoom.eraser(data.x, data.y);
+                    drawRoom.eraseByCode(data.code);
                 }
                 else {
                     data.map((e: Line) => drawRoom.setPathData(e))
                 }
-                drawRoom.clearCanvasV();
                 render(drawRoom);
         }
     }
