@@ -26,8 +26,8 @@ export class MessageHandler {
                 else if (data.shape == "eraser") {
                     drawRoom.eraseByCode(data.code);
                 }
-                else {
-                    data.map((e: Line) => drawRoom.setPathData(e))
+                else if (data.shape == "pencil") {
+                    drawRoom.setPathData(data);
                 }
                 render(drawRoom);
         }

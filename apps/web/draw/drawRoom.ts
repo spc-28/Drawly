@@ -63,8 +63,8 @@ export default class DrawRoom {
                     else if (data.shape == "eraser") {
                         this.eraseByCode(data.code);
                     }
-                    else {
-                        data.map((e: Line) => this.pathData.push(e))
+                    else if (data.shape == "pencil") {
+                        this.pathData.push(data);
                     }
                 })
                 render(this);

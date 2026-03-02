@@ -130,6 +130,7 @@ export class EventHandlers {
                 this.drawRoom.setInitX(arr[0]);
                 this.drawRoom.setInitY(arr[1]);
                 this.drawRoom.setPathData(pencil);
+                this.drawRoom.messageHandler.sendMessage(pencil);
             }
 
             else if (this.drawRoom.getTool() == "Rectangle") {
@@ -240,19 +241,6 @@ export class EventHandlers {
             }
             this.drawRoom.setLines(line);
             this.drawRoom.messageHandler.sendMessage(line);
-        }
-        else if (this.drawRoom.getTool() == "Pencil") {
-            const pencil = {
-                x: this.drawRoom.getInitX(),
-                y: this.drawRoom.getInitY(),
-                toX: this.toWorldX(event.clientX),
-                toY: this.toWorldY(event.clientY),
-                shape: "pencil",
-                color: this.drawRoom.getColor(),
-                code: this.pencilCode
-            }
-            this.drawRoom.setPathData(pencil);
-            this.drawRoom.messageHandler.sendMessage(this.drawRoom.getPathData());
         }
     }
 
