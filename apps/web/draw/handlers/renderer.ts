@@ -19,6 +19,74 @@ class Renderer {
         drawRoom.getPathData().forEach(pencil => drawPencil(drawRoom.getCtx(), pencil));
     }
 
+    static renderSelectionState(drawRoom: DrawRoom) {
+        const ctx = drawRoom.getCtx();
+        const codes = drawRoom.selectedCodes;
+
+        if (codes.size > 0) {
+            ctx.save();
+            ctx.strokeStyle = '#4a90d9';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([]);
+            for (const rect of drawRoom.getRectangles()) {
+                if (!rect.code || !codes.has(rect.code)) continue;
+                const x1 = Math.min(rect.x, rect.x + rect.width) - 5;
+                const y1 = Math.min(rect.y, rect.y + rect.height) - 5;
+                ctx.strokeRect(x1, y1, Math.abs(rect.width) + 10, Math.abs(rect.height) + 10);
+            }
+            for (const circle of drawRoom.getCircles()) {
+                if (!circle.code || !codes.has(circle.code)) continue;
+                ctx.beginPath();
+                ctx.arc(circle.x, circle.y, Math.abs(circle.radius) + 5, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            for (const line of drawRoom.getLines()) {
+                if (!line.code || !codes.has(line.code)) continue;
+                ctx.lineWidth = 14;
+                ctx.globalAlpha = 0.25;
+                ctx.beginPath();
+                ctx.moveTo(line.x, line.y);
+                ctx.lineTo(line.toX, line.toY);
+                ctx.stroke();
+                ctx.lineWidth = 2;
+                ctx.globalAlpha = 1;
+            }
+            for (const text of drawRoom.getTexts()) {
+                if (!text.code || !codes.has(text.code)) continue;
+                const tLines = text.text.split('\n');
+                const maxLen = Math.max(...tLines.map(l => l.length));
+                const tw = maxLen * 22 + 10;
+                const th = (tLines.length - 1) * 48 + 50;
+                ctx.strokeRect(text.x - 5, text.y - 45, tw, th);
+            }
+            // Pencil strokes: highlight each selected segment with a thick transparent stroke
+            ctx.lineWidth = 14;
+            ctx.globalAlpha = 0.25;
+            for (const pencil of drawRoom.getPathData()) {
+                if (!pencil.code || !codes.has(pencil.code)) continue;
+                ctx.beginPath();
+                ctx.moveTo(pencil.x, pencil.y);
+                ctx.lineTo(pencil.toX, pencil.toY);
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+            ctx.restore();
+        }
+
+        const sel = drawRoom.selectionRect;
+        if (sel) {
+            ctx.save();
+            ctx.strokeStyle = '#4a90d9';
+            ctx.fillStyle = 'rgba(74, 144, 217, 0.08)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([6, 4]);
+            ctx.strokeRect(sel.x, sel.y, sel.width, sel.height);
+            ctx.fillRect(sel.x, sel.y, sel.width, sel.height);
+            ctx.setLineDash([]);
+            ctx.restore();
+        }
+    }
+
     static renderTypingState(drawRoom: DrawRoom) {
         const ts = drawRoom.typingState;
         if (!ts) return;
@@ -69,5 +137,6 @@ class Renderer {
 export function render(drawRoom: DrawRoom) {
     Renderer.clearCanvas(drawRoom.getCtx(), drawRoom.getCanvas(), drawRoom.getScale(), drawRoom.getOffsetX(), drawRoom.getOffsetY());
     Renderer.renderShapes(drawRoom);
+    Renderer.renderSelectionState(drawRoom);
     Renderer.renderTypingState(drawRoom);
 }

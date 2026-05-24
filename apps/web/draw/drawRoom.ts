@@ -36,6 +36,8 @@ export default class DrawRoom {
     private onZoomChange?: (scale: number) => void;
 
     public typingState: { x: number; y: number; lines: string[]; cursorLine: number; cursorVisible: boolean; originalText?: Text } | null = null;
+    public selectionRect: { x: number; y: number; width: number; height: number } | null = null;
+    public selectedCodes: Set<string> = new Set();
 
     public eventHandler: EventHandlers;
     public messageHandler: MessageHandler;
@@ -147,6 +149,31 @@ export default class DrawRoom {
         render(this);
     }
 
+
+    clearSelection(): void {
+        this.selectedCodes.clear();
+        this.selectionRect = null;
+    }
+
+    moveSelectedShapes(dx: number, dy: number): void {
+        const codes = this.selectedCodes;
+        for (const rect of this.rectangles) {
+            if (rect.code && codes.has(rect.code)) { rect.x += dx; rect.y += dy; }
+        }
+        for (const circle of this.circles) {
+            if (circle.code && codes.has(circle.code)) { circle.x += dx; circle.y += dy; }
+        }
+        for (const line of this.lines) {
+            if (line.code && codes.has(line.code)) { line.x += dx; line.y += dy; line.toX += dx; line.toY += dy; }
+        }
+        for (const text of this.texts) {
+            if (text.code && codes.has(text.code)) { text.x += dx; text.y += dy; }
+        }
+        for (const pencil of this.pathData) {
+            if (pencil.code && codes.has(pencil.code)) { pencil.x += dx; pencil.y += dy; pencil.toX += dx; pencil.toY += dy; }
+        }
+        render(this);
+    }
 
     eraseByCode(code: string) {
         this.rectangles = this.rectangles.filter(e => e.code !== code);

@@ -2,6 +2,56 @@ import { Rectangle, Circle, Line, Text } from "../types/shape";
 
 const TOLERANCE = 8;
 
+function overlaps(
+    rx1: number, ry1: number, rx2: number, ry2: number,
+    bx1: number, by1: number, bx2: number, by2: number
+): boolean {
+    // Ensure b bounds are ordered and have at least 1px extent
+    const minBx = Math.min(bx1, bx2), maxBx = Math.max(bx1, bx2) || minBx + 1;
+    const minBy = Math.min(by1, by2), maxBy = Math.max(by1, by2) || minBy + 1;
+    return rx1 <= maxBx && rx2 >= minBx && ry1 <= maxBy && ry2 >= minBy;
+}
+
+export function findShapesInRect(
+    rectangles: Rectangle[], circles: Circle[], lines: Line[], texts: Text[], pathData: Line[],
+    selX: number, selY: number, selW: number, selH: number
+): Set<string> {
+    const rx1 = Math.min(selX, selX + selW);
+    const rx2 = Math.max(selX, selX + selW);
+    const ry1 = Math.min(selY, selY + selH);
+    const ry2 = Math.max(selY, selY + selH);
+    const codes = new Set<string>();
+
+    for (const r of rectangles) {
+        if (!r.code) continue;
+        const bx1 = r.x, bx2 = r.x + r.width;
+        const by1 = r.y, by2 = r.y + r.height;
+        if (overlaps(rx1, ry1, rx2, ry2, bx1, by1, bx2, by2)) codes.add(r.code);
+    }
+    for (const c of circles) {
+        if (!c.code) continue;
+        const rad = Math.abs(c.radius);
+        if (overlaps(rx1, ry1, rx2, ry2, c.x - rad, c.y - rad, c.x + rad, c.y + rad)) codes.add(c.code);
+    }
+    for (const l of lines) {
+        if (!l.code) continue;
+        if (overlaps(rx1, ry1, rx2, ry2, l.x, l.y, l.toX, l.toY)) codes.add(l.code);
+    }
+    for (const p of pathData) {
+        if (!p.code) continue;
+        if (overlaps(rx1, ry1, rx2, ry2, p.x, p.y, p.toX, p.toY)) codes.add(p.code);
+    }
+    for (const t of texts) {
+        if (!t.code) continue;
+        const tLines = t.text.split('\n');
+        const maxLen = Math.max(...tLines.map(l => l.length));
+        const tw = maxLen * 22;
+        const th = (tLines.length - 1) * 48 + 40;
+        if (overlaps(rx1, ry1, rx2, ry2, t.x, t.y - 40, t.x + tw, t.y - 40 + th)) codes.add(t.code);
+    }
+    return codes;
+}
+
 function pointToSegmentDist(px: number, py: number, x1: number, y1: number, x2: number, y2: number): number {
     const dx = x2 - x1, dy = y2 - y1;
     const lenSq = dx * dx + dy * dy;

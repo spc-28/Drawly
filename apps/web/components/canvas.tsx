@@ -101,7 +101,13 @@ export default function Canvas({
         </div>
         <Bar classname="justify-between px-9 ">
           <div className="flex items-center gap-10 h-full">
-            <MousePointer2 className="cursor-pointer" />
+            <MousePointer2
+              onClick={() => {
+                handleClick("Arrow");
+                toast.success("Select selected");
+              }}
+              className="cursor-pointer"
+            />
             <Hand
               onClick={() => {
                 handleClick("Hand");

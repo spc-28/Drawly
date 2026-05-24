@@ -3,7 +3,7 @@ import { getRandomHexColor } from "../utils/virtual";
 import { Eraser } from "../types/shape";
 import DrawRoom from "../drawRoom";
 import { render } from "./renderer";
-import { findHitTextShape } from "../utils/hitTest";
+import { findHitTextShape, findShapesInRect } from "../utils/hitTest";
 
 export class EventHandlers {
     private drawRoom: DrawRoom;
@@ -13,6 +13,10 @@ export class EventHandlers {
     private lastPanY: number = 0;
     private isSpaceDown: boolean = false;
     private cursorInterval: ReturnType<typeof setInterval> | null = null;
+    private isSelecting: boolean = false;
+    private isMovingSelection: boolean = false;
+    private lastMoveX: number = 0;
+    private lastMoveY: number = 0;
 
     constructor(drawRoom: DrawRoom) {
             this.drawRoom = drawRoom;
@@ -31,10 +35,14 @@ export class EventHandlers {
 
     private updateCursor(): void {
         const canvas = this.drawRoom.getCanvas();
-        if (this.isPanning) {
+        if (this.isMovingSelection) {
+            canvas.style.cursor = 'move';
+        } else if (this.isPanning) {
             canvas.style.cursor = 'grabbing';
         } else if (this.isSpaceDown || this.drawRoom.getTool() === 'Hand') {
-            canvas.style.cursor = 'grab';
+            canvas.style.cursor = this.drawRoom.selectedCodes.size > 0 ? 'move' : 'grab';
+        } else if (this.drawRoom.getTool() === 'Arrow') {
+            canvas.style.cursor = 'default';
         } else {
             canvas.style.cursor = 'crosshair';
         }
@@ -107,6 +115,11 @@ export class EventHandlers {
             event.preventDefault();
             return;
         }
+        if (event.key === 'Escape' && !this.drawRoom.typingState) {
+            this.drawRoom.clearSelection();
+            render(this.drawRoom);
+            return;
+        }
         if (event.code === 'Space' && !this.isSpaceDown) {
             if (document.activeElement && ['INPUT', 'TEXTAREA'].includes((document.activeElement as HTMLElement).tagName)) return;
             event.preventDefault();
@@ -150,10 +163,22 @@ export class EventHandlers {
             // Don't return — let the click update initX/Y so mouseUp gets fresh coords
         }
 
+        const tool = this.drawRoom.getTool();
+
+        // Hand tool + existing selection → move selection instead of pan
+        if (event.button === 0 && (this.isSpaceDown || tool === 'Hand') && this.drawRoom.selectedCodes.size > 0) {
+            event.preventDefault();
+            this.isMovingSelection = true;
+            this.lastMoveX = event.clientX;
+            this.lastMoveY = event.clientY;
+            this.updateCursor();
+            return;
+        }
+
         // Middle mouse button OR Hand tool OR Space+drag → pan
         if (
             event.button === 1 ||
-            (event.button === 0 && (this.isSpaceDown || this.drawRoom.getTool() === 'Hand'))
+            (event.button === 0 && (this.isSpaceDown || tool === 'Hand'))
         ) {
             event.preventDefault();
             this.isPanning = true;
@@ -163,17 +188,57 @@ export class EventHandlers {
             return;
         }
 
+        // Arrow tool → start drag selection
+        if (event.button === 0 && tool === 'Arrow') {
+            this.drawRoom.clearSelection();
+            const wx = this.toWorldX(event.clientX);
+            const wy = this.toWorldY(event.clientY);
+            this.drawRoom.setInitX(wx);
+            this.drawRoom.setInitY(wy);
+            this.drawRoom.selectionRect = { x: wx, y: wy, width: 0, height: 0 };
+            this.isSelecting = true;
+            render(this.drawRoom);
+            return;
+        }
+
         this.drawRoom.setPointerStatus(true);
         this.drawRoom.setInitX(this.toWorldX(event.clientX));
         this.drawRoom.setInitY(this.toWorldY(event.clientY));
 
-        if (this.drawRoom.getTool() == "Pencil" || this.drawRoom.getTool() == "Line") {
+        if (tool == "Pencil" || tool == "Line") {
             this.drawRoom.getCtx().fillStyle = this.drawRoom.getColor() || "#ffffff";
             this.pencilCode = getRandomHexColor();
         }
     }
 
     mouseMove = (event: MouseEvent) => {
+        // Move selected shapes (Hand tool with selection)
+        if (this.isMovingSelection) {
+            const scale = this.drawRoom.getScale();
+            const dx = (event.clientX - this.lastMoveX) / scale;
+            const dy = (event.clientY - this.lastMoveY) / scale;
+            this.lastMoveX = event.clientX;
+            this.lastMoveY = event.clientY;
+            this.drawRoom.moveSelectedShapes(dx, dy);
+            return;
+        }
+
+        // Arrow tool drag → update selection rect
+        if (this.isSelecting && this.drawRoom.selectionRect) {
+            const wx = this.toWorldX(event.clientX);
+            const wy = this.toWorldY(event.clientY);
+            this.drawRoom.selectionRect.width = wx - this.drawRoom.getInitX();
+            this.drawRoom.selectionRect.height = wy - this.drawRoom.getInitY();
+            const sel = this.drawRoom.selectionRect;
+            this.drawRoom.selectedCodes = findShapesInRect(
+                this.drawRoom.getRectangles(), this.drawRoom.getCircles(),
+                this.drawRoom.getLines(), this.drawRoom.getTexts(), this.drawRoom.getPathData(),
+                sel.x, sel.y, sel.width, sel.height
+            );
+            render(this.drawRoom);
+            return;
+        }
+
         // Pan (middle mouse, Hand tool, or Space)
         if (this.isPanning) {
             const dx = event.clientX - this.lastPanX;
@@ -247,6 +312,22 @@ export class EventHandlers {
     }
 
     mouseUp = (event: MouseEvent) =>{
+        // End moving selection
+        if (this.isMovingSelection) {
+            this.isMovingSelection = false;
+            this.updateCursor();
+            return;
+        }
+
+        // End drag selection
+        if (this.isSelecting) {
+            this.isSelecting = false;
+            this.drawRoom.selectionRect = null;
+            render(this.drawRoom);
+            this.updateCursor();
+            return;
+        }
+
         // End panning
         if (this.isPanning) {
             this.isPanning = false;
