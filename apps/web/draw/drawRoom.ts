@@ -1,5 +1,12 @@
 import { Rectangle, Circle, Line, Text } from "./types/shape";
-import { checkUser } from "@repo/common/types";
+function decodeUserId(token: string): string | null {
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1] ?? ''));
+        return payload.userId ?? null;
+    } catch {
+        return null;
+    }
+}
 import { deleteChat, getExistingShapes } from "./utils/request";
 import { render } from "./handlers/renderer";
 import { EventHandlers } from "./handlers/eventHandlers";
@@ -38,7 +45,7 @@ export default class DrawRoom {
         this.ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
         this.ctx.strokeStyle = "white";
         this.ctx.fillStyle = "white";
-        this.userId = checkUser(localStorage.getItem('token') || "");
+        this.userId = decodeUserId(localStorage.getItem('token') || "");
         this.onZoomChange = onZoomChange;
 
         this.eventHandler = new EventHandlers(this);

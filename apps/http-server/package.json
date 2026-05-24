@@ -1,10 +1,12 @@
 {
-  "name": "http-server",
+  "name": "@repo/http-server",
   "version": "1.0.0",
   "type": "module",
   "main": "index.js",
   "scripts": {
     "build": "tsc -b",
+    "lint": "eslint src/",
+    "check-types": "tsc --noEmit",
     "start": "node ./dist/index.js",
     "dev": "pnpm build && pnpm start"
   },
@@ -22,6 +24,7 @@
     "@repo/backend-common": "workspace:*",
     "@repo/common": "workspace:*",
     "@repo/db": "workspace:*",
+    "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/express": "^5.0.0",
     "@types/jsonwebtoken": "~9.0.7"

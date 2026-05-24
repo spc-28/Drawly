@@ -42,6 +42,9 @@ importers:
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/eslint-config
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
@@ -134,6 +137,9 @@ importers:
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/eslint-config
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
@@ -146,32 +152,35 @@ importers:
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
+      jsonwebtoken:
+        specifier: ^9.0.2
+        version: 9.0.2
     devDependencies:
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
+      '@types/jsonwebtoken':
+        specifier: ~9.0.7
+        version: 9.0.8
       '@types/node':
         specifier: ^22.10.6
         version: 22.10.6
 
   packages/common:
     dependencies:
-      jsonwebtoken:
-        specifier: ^9.0.2
-        version: 9.0.2
       zod:
         specifier: ^3.24.1
         version: 3.24.1
     devDependencies:
-      '@repo/backend-common':
+      '@repo/eslint-config':
         specifier: workspace:*
-        version: link:../backend-common
+        version: link:../eslint-config
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@types/jsonwebtoken':
-        specifier: ~9.0.8
-        version: 9.0.8
 
   packages/db:
     dependencies:
@@ -188,6 +197,9 @@ importers:
         specifier: ^8.13.3
         version: 8.19.0
     devDependencies:
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config

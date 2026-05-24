@@ -10,10 +10,7 @@
     "./styles.css": "./dist/index.css"
   },
   "scripts": {
-    "build": "tailwindcss -i ./src/styles.css -o ./dist/index.css",
-    "lint": "eslint src/",
-    "type-check": "tsc --noEmit",
-    "dev": "tailwindcss -i ./src/styles.css -o ./dist/index.css --watch"
+    "build": "tailwindcss -i ./src/styles.css -o ./dist/index.css"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",

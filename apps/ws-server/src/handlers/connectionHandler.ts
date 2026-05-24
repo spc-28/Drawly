@@ -1,6 +1,6 @@
 import { WebSocket } from "ws";
 import { IncomingMessage } from "http";
-import { checkUser } from "@repo/common/types";
+import { checkUser } from "@repo/backend-common/config";
 import { addUser, removeUser } from "../store/userStore.js";
 import { handleMessage } from "./messageHandler.js";
 

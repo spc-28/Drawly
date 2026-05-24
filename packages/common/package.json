@@ -5,6 +5,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "lint": "eslint src/",
+    "check-types": "tsc --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "exports": {
@@ -14,12 +16,10 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@repo/backend-common": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
-    "@types/jsonwebtoken": "~9.0.8"
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*"
   },
   "dependencies": {
-    "jsonwebtoken": "^9.0.2",
     "zod": "^3.24.1"
   }
 }
