@@ -33,14 +33,23 @@ function hitLine(line: Line, x: number, y: number): boolean {
 }
 
 function hitText(text: Text, x: number, y: number): boolean {
-    const approxWidth = text.text.length * 22;
-    const approxHeight = 40;
+    const lines = text.text.split('\n');
+    const maxLen = Math.max(...lines.map(l => l.length));
+    const approxWidth = maxLen * 22;
     return (
         x >= text.x - TOLERANCE &&
         x <= text.x + approxWidth + TOLERANCE &&
-        y >= text.y - approxHeight - TOLERANCE &&
-        y <= text.y + TOLERANCE
+        y >= text.y - 40 - TOLERANCE &&
+        y <= text.y + (lines.length - 1) * 48 + TOLERANCE
     );
+}
+
+export function findHitTextShape(texts: Text[], x: number, y: number): Text | undefined {
+    for (let i = texts.length - 1; i >= 0; i--) {
+        const s = texts[i]!;
+        if (hitText(s, x, y)) return s;
+    }
+    return undefined;
 }
 
 export function findHitShape(

@@ -45,16 +45,19 @@ export function drawLine(ctx: CanvasRenderingContext2D, line: Line, color?: stri
 
 export function writeText(ctx: CanvasRenderingContext2D, text:Text, color?: string) {
     if(color && color[0] == '#'){
-        ctx.strokeStyle = ctx.fillStyle = color
+        ctx.fillStyle = color;
     }
     else{
-        ctx.strokeStyle = ctx.fillStyle = text.color;
+        ctx.fillStyle = text.color;
     }
     ctx.font = "40px Arial";
     if(text.text == "null"){
         return;
     }
-    ctx.fillText(text.text, text.x, text.y);
+    const lines = text.text.split('\n');
+    lines.forEach((line, i) => {
+        ctx.fillText(line, text.x, text.y + i * 48);
+    });
 }
 
 export function drawPencil(ctx: CanvasRenderingContext2D, pencil:Line, color?: string):[number,number] {

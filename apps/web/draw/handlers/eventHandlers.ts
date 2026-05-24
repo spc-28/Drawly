@@ -1,7 +1,9 @@
-import { drawCircle, drawLine, drawPencil, drawRectangle, writeText } from "../utils/drawing";
+import { drawCircle, drawLine, drawPencil, drawRectangle } from "../utils/drawing";
 import { getRandomHexColor } from "../utils/virtual";
+import { Eraser } from "../types/shape";
 import DrawRoom from "../drawRoom";
 import { render } from "./renderer";
+import { findHitTextShape } from "../utils/hitTest";
 
 export class EventHandlers {
     private drawRoom: DrawRoom;
@@ -10,6 +12,7 @@ export class EventHandlers {
     private lastPanX: number = 0;
     private lastPanY: number = 0;
     private isSpaceDown: boolean = false;
+    private cursorInterval: ReturnType<typeof setInterval> | null = null;
 
     constructor(drawRoom: DrawRoom) {
             this.drawRoom = drawRoom;
@@ -41,7 +44,69 @@ export class EventHandlers {
         this.updateCursor();
     }
 
+    private startTyping(x: number, y: number): void {
+        if (this.drawRoom.typingState) this.commitText();
+        this.drawRoom.typingState = { x, y, lines: [""], cursorLine: 0, cursorVisible: true };
+        this.cursorInterval = setInterval(() => {
+            if (this.drawRoom.typingState) {
+                this.drawRoom.typingState.cursorVisible = !this.drawRoom.typingState.cursorVisible;
+                render(this.drawRoom);
+            }
+        }, 500);
+        render(this.drawRoom);
+    }
+
+    private commitText(): void {
+        const ts = this.drawRoom.typingState;
+        if (!ts) return;
+        if (this.cursorInterval) { clearInterval(this.cursorInterval); this.cursorInterval = null; }
+        this.drawRoom.typingState = null;
+        const joined = ts.lines.join('\n');
+        if (joined.trim()) {
+            const text = {
+                x: ts.x, y: ts.y, shape: "text", text: joined,
+                color: this.drawRoom.getColor(), code: getRandomHexColor()
+            };
+            this.drawRoom.setTexts(text);
+            this.drawRoom.messageHandler.sendMessage(text);
+        }
+        render(this.drawRoom);
+    }
+
+    private cancelText(): void {
+        if (this.cursorInterval) { clearInterval(this.cursorInterval); this.cursorInterval = null; }
+        this.drawRoom.typingState = null;
+        render(this.drawRoom);
+    }
+
     keyDown = (event: KeyboardEvent) => {
+        if (this.drawRoom.typingState) {
+            const ts = this.drawRoom.typingState;
+            if (event.key === 'Enter') {
+                ts.lines.splice(ts.cursorLine + 1, 0, "");
+                ts.cursorLine += 1;
+                ts.cursorVisible = true;
+                render(this.drawRoom);
+            } else if (event.key === 'Escape') {
+                this.cancelText();
+            } else if (event.key === 'Backspace') {
+                const currentLine = ts.lines[ts.cursorLine] ?? "";
+                if (currentLine.length > 0) {
+                    ts.lines[ts.cursorLine] = currentLine.slice(0, -1);
+                } else if (ts.cursorLine > 0) {
+                    ts.lines.splice(ts.cursorLine, 1);
+                    ts.cursorLine -= 1;
+                }
+                ts.cursorVisible = true;
+                render(this.drawRoom);
+            } else if (event.key.length === 1) {
+                ts.lines[ts.cursorLine] += event.key;
+                ts.cursorVisible = true;
+                render(this.drawRoom);
+            }
+            event.preventDefault();
+            return;
+        }
         if (event.code === 'Space' && !this.isSpaceDown) {
             if (document.activeElement && ['INPUT', 'TEXTAREA'].includes((document.activeElement as HTMLElement).tagName)) return;
             event.preventDefault();
@@ -80,6 +145,11 @@ export class EventHandlers {
     }
 
     mouseDown = (event: MouseEvent)=> {
+        if (this.drawRoom.typingState) {
+            this.commitText();
+            // Don't return — let the click update initX/Y so mouseUp gets fresh coords
+        }
+
         // Middle mouse button OR Hand tool OR Space+drag → pan
         if (
             event.button === 1 ||
@@ -205,17 +275,25 @@ export class EventHandlers {
         }
 
         else if (this.drawRoom.getTool() == "Text") {
-            const text = {
-                x: this.drawRoom.getInitX(),
-                y: this.drawRoom.getInitY(),
-                shape: "text",
-                text: String(prompt("Enter the Text")),
-                color: this.drawRoom.getColor(),
-                code: getRandomHexColor()
+            const wx = this.drawRoom.getInitX();
+            const wy = this.drawRoom.getInitY();
+            const hit = findHitTextShape(this.drawRoom.getTexts(), wx, wy);
+            if (hit && hit.code) {
+                this.drawRoom.removeText(hit.code);
+                this.drawRoom.messageHandler.sendMessage({ shape: "eraser", code: hit.code } as Eraser);
+                const lines = hit.text.split('\n');
+                this.drawRoom.typingState = { x: hit.x, y: hit.y, lines, cursorLine: lines.length - 1, cursorVisible: true, originalText: hit };
+                if (this.cursorInterval) clearInterval(this.cursorInterval);
+                this.cursorInterval = setInterval(() => {
+                    if (this.drawRoom.typingState) {
+                        this.drawRoom.typingState.cursorVisible = !this.drawRoom.typingState.cursorVisible;
+                        render(this.drawRoom);
+                    }
+                }, 500);
+                render(this.drawRoom);
+            } else {
+                this.startTyping(wx, wy);
             }
-            this.drawRoom.setTexts(text);
-            writeText(this.drawRoom.getCtx(), text);
-            this.drawRoom.messageHandler.sendMessage(text);
         }
         else if (this.drawRoom.getTool() == "Circle") {
             const circle = {
@@ -245,6 +323,7 @@ export class EventHandlers {
     }
 
     kill = () => {
+        if (this.cursorInterval) { clearInterval(this.cursorInterval); this.cursorInterval = null; }
         this.drawRoom.getCanvas().removeEventListener("mousedown", this.mouseDown);
         this.drawRoom.getCanvas().removeEventListener("mouseup", this.mouseUp);
         this.drawRoom.getCanvas().removeEventListener("mousemove", this.mouseMove);

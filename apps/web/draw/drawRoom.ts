@@ -35,6 +35,8 @@ export default class DrawRoom {
     private offsetY: number = 0;
     private onZoomChange?: (scale: number) => void;
 
+    public typingState: { x: number; y: number; lines: string[]; cursorLine: number; cursorVisible: boolean; originalText?: Text } | null = null;
+
     public eventHandler: EventHandlers;
     public messageHandler: MessageHandler;
 
@@ -104,6 +106,7 @@ export default class DrawRoom {
     setCircles(value: Circle): void { this.circles.push(value); }
     getTexts(): Text[] { return this.texts; }
     setTexts(value: Text): void { this.texts.push(value); }
+    removeText(code: string): void { this.texts = this.texts.filter(t => t.code !== code); }
     getColor(): string { return this.color; }
     setColor(value: string): void { this.color = value; }
     getPathData(): Line[] { return this.pathData; }
