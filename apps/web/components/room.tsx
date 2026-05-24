@@ -1,6 +1,6 @@
 "use client"
 
-import { WS_LINK } from "@repo/backend-common/config";
+const WS_LINK = process.env.NEXT_PUBLIC_WS_URL;
 import { useEffect, useState } from "react";
 import Canvas from "./canvas";
 

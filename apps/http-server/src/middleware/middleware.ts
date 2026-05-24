@@ -4,27 +4,25 @@ import { CustomRequest } from "../types/requestType.js";
 import { JWT_SECRET} from "@repo/backend-common/config";
 
 export default function authMiddleware(req: CustomRequest, res: Response, next: NextFunction) {
-    const auth = req.headers.authorization || req.headers["Authorization"] || null;
+    const auth = req.headers.authorization || null;
 
-    if(!auth && !auth?.startsWith("Bearer")){
-        return res.status(400).json({
-            message: "Wrong Credentials"
+    if (!auth || !auth.startsWith("Bearer ")) {
+        return res.status(401).json({
+            message: "Missing or malformed authorization header"
         })
     }
 
-    const token = (auth as string).split(' ')[1];
+    const token = auth.split(' ')[1];
 
     try {
-        const { userId } : any = jwt.verify(String(token), JWT_SECRET);
-        req.userId = userId;
+        const payload = jwt.verify(token as string, JWT_SECRET) as unknown as { userId: string };
+        req.userId = payload.userId;
         next();
-    } 
-    catch (error) {
-        return res.status(400).json({
-            message: "Authentication Failed",
-            error
-        })
-
     }
-    
+    catch {
+        return res.status(401).json({
+            message: "Invalid or expired token"
+        })
+    }
+
 }

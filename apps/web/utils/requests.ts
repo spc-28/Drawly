@@ -1,4 +1,4 @@
-import { HTTP_LINK } from "@repo/backend-common/config";
+const HTTP_LINK = process.env.NEXT_PUBLIC_HTTP_URL;
 
 export async function signIn(username:string, password:string):Promise<{token:string}> {
   try {

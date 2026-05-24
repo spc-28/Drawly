@@ -6,7 +6,6 @@ function overlaps(
     rx1: number, ry1: number, rx2: number, ry2: number,
     bx1: number, by1: number, bx2: number, by2: number
 ): boolean {
-    // Ensure b bounds are ordered and have at least 1px extent
     const minBx = Math.min(bx1, bx2), maxBx = Math.max(bx1, bx2) || minBx + 1;
     const minBy = Math.min(by1, by2), maxBy = Math.max(by1, by2) || minBy + 1;
     return rx1 <= maxBx && rx2 >= minBx && ry1 <= maxBy && ry2 >= minBy;

@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { CustomRequest } from "../types/requestType.js";
-import { createRoomSchema } from "@repo/common/types";
 import { prismaClient } from "@repo/db/client";
+import { logger } from "../logger.js";
 
 export async function createRoom(req: CustomRequest, res: Response) {
 
@@ -11,16 +11,12 @@ export async function createRoom(req: CustomRequest, res: Response) {
                 adminId: req.userId as string,
             }
         })
-        res.status(200).json({
-            room
-        })
-        return; 
+        res.status(200).json({ room })
+        return;
     }
     catch(error) {
-        res.status(400).json({
-            message: "Room creation Failed",
-            error
-        })
+        logger.error({ err: error }, "createRoom error");
+        res.status(500).json({ message: "Room creation failed" })
         return;
     }
 }
