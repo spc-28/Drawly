@@ -21,7 +21,7 @@ export function getUsers(): User[] {
     return users;
 }
 
-export function broadcast(roomId: number, senderId: string, message: object): void {
+export function localBroadcast(roomId: number, senderId: string, message: object): void {
     const payload = JSON.stringify(message);
     users.forEach(user => {
         if (user.rooms.includes(roomId) && user.userId !== senderId) {

@@ -1,5 +1,6 @@
-import { prismaClient } from "@repo/db/client";
-import { broadcast, getUser } from "../store/userStore.js";
+import { publish } from "../redis/pubsub.js";
+import { enqueueChatPersist } from "../redis/queue.js";
+import { getUser } from "../store/userStore.js";
 import { WebSocket, RawData } from "ws";
 import { logger } from "../logger.js";
 
@@ -40,16 +41,13 @@ export async function handleMessage(socket: WebSocket, userId: string, data: Raw
         if (!Number.isInteger(roomId) || roomId <= 0) return;
         const { message } = parsedData;
         if (!message) return;
-        try {
-            if (message.shape !== "eraser") {
-                await prismaClient.chat.create({
-                    data: { roomId, message, userId }
-                });
-            }
-        } catch (error) {
-            logger.error({ err: error, roomId, userId }, "Failed to persist message");
-            return;
+
+        await publish(roomId, userId, message);
+
+        if (message.shape !== "eraser") {
+            await enqueueChatPersist(roomId, userId, message);
         }
-        broadcast(roomId, userId, message);
+
+        logger.info({ roomId, userId }, "Message published and enqueued");
     }
 }
