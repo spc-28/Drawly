@@ -386,7 +386,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   User: 'User',
   Room: 'Room',
-  Chat: 'Chat'
+  Shape: 'Shape'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -402,7 +402,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "room" | "chat"
+    modelProps: "user" | "room" | "shape"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -554,77 +554,77 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    Chat: {
-      payload: Prisma.$ChatPayload<ExtArgs>
-      fields: Prisma.ChatFieldRefs
+    Shape: {
+      payload: Prisma.$ShapePayload<ExtArgs>
+      fields: Prisma.ShapeFieldRefs
       operations: {
         findUnique: {
-          args: Prisma.ChatFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload> | null
+          args: Prisma.ShapeFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePayload> | null
         }
         findUniqueOrThrow: {
-          args: Prisma.ChatFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload>
+          args: Prisma.ShapeFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePayload>
         }
         findFirst: {
-          args: Prisma.ChatFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload> | null
+          args: Prisma.ShapeFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePayload> | null
         }
         findFirstOrThrow: {
-          args: Prisma.ChatFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload>
+          args: Prisma.ShapeFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePayload>
         }
         findMany: {
-          args: Prisma.ChatFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload>[]
+          args: Prisma.ShapeFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePayload>[]
         }
         create: {
-          args: Prisma.ChatCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload>
+          args: Prisma.ShapeCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePayload>
         }
         createMany: {
-          args: Prisma.ChatCreateManyArgs<ExtArgs>
+          args: Prisma.ShapeCreateManyArgs<ExtArgs>
           result: BatchPayload
         }
         createManyAndReturn: {
-          args: Prisma.ChatCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload>[]
+          args: Prisma.ShapeCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePayload>[]
         }
         delete: {
-          args: Prisma.ChatDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload>
+          args: Prisma.ShapeDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePayload>
         }
         update: {
-          args: Prisma.ChatUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload>
+          args: Prisma.ShapeUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePayload>
         }
         deleteMany: {
-          args: Prisma.ChatDeleteManyArgs<ExtArgs>
+          args: Prisma.ShapeDeleteManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateMany: {
-          args: Prisma.ChatUpdateManyArgs<ExtArgs>
+          args: Prisma.ShapeUpdateManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateManyAndReturn: {
-          args: Prisma.ChatUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload>[]
+          args: Prisma.ShapeUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePayload>[]
         }
         upsert: {
-          args: Prisma.ChatUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload>
+          args: Prisma.ShapeUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePayload>
         }
         aggregate: {
-          args: Prisma.ChatAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateChat>
+          args: Prisma.ShapeAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateShape>
         }
         groupBy: {
-          args: Prisma.ChatGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.ChatGroupByOutputType>[]
+          args: Prisma.ShapeGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ShapeGroupByOutputType>[]
         }
         count: {
-          args: Prisma.ChatCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.ChatCountAggregateOutputType> | number
+          args: Prisma.ShapeCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ShapeCountAggregateOutputType> | number
         }
       }
     }
@@ -690,15 +690,18 @@ export const RoomScalarFieldEnum = {
 export type RoomScalarFieldEnum = (typeof RoomScalarFieldEnum)[keyof typeof RoomScalarFieldEnum]
 
 
-export const ChatScalarFieldEnum = {
+export const ShapeScalarFieldEnum = {
   id: 'id',
   roomId: 'roomId',
-  message: 'message',
+  type: 'type',
+  data: 'data',
   userId: 'userId',
-  createdAt: 'createdAt'
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
 } as const
 
-export type ChatScalarFieldEnum = (typeof ChatScalarFieldEnum)[keyof typeof ChatScalarFieldEnum]
+export type ShapeScalarFieldEnum = (typeof ShapeScalarFieldEnum)[keyof typeof ShapeScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -913,7 +916,7 @@ export type PrismaClientOptions = ({
 export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
   room?: Prisma.RoomOmit
-  chat?: Prisma.ChatOmit
+  shape?: Prisma.ShapeOmit
 }
 
 /* Types for Logging */

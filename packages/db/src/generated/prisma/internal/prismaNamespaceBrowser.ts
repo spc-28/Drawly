@@ -53,7 +53,7 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   User: 'User',
   Room: 'Room',
-  Chat: 'Chat'
+  Shape: 'Shape'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -95,15 +95,18 @@ export const RoomScalarFieldEnum = {
 export type RoomScalarFieldEnum = (typeof RoomScalarFieldEnum)[keyof typeof RoomScalarFieldEnum]
 
 
-export const ChatScalarFieldEnum = {
+export const ShapeScalarFieldEnum = {
   id: 'id',
   roomId: 'roomId',
-  message: 'message',
+  type: 'type',
+  data: 'data',
   userId: 'userId',
-  createdAt: 'createdAt'
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
 } as const
 
-export type ChatScalarFieldEnum = (typeof ChatScalarFieldEnum)[keyof typeof ChatScalarFieldEnum]
+export type ShapeScalarFieldEnum = (typeof ShapeScalarFieldEnum)[keyof typeof ShapeScalarFieldEnum]
 
 
 export const SortOrder = {

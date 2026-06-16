@@ -1,4 +1,4 @@
-import { Circle, Eraser, Line, Rectangle } from "../types/shape";
+import { Circle, Eraser, Line, Pencil, Rectangle, Text } from "../types/shape";
 import DrawRoom from "../drawRoom";
 import { render } from "./renderer";
 
@@ -11,29 +11,17 @@ export class MessageHandler {
         drawRoom.getWs().onmessage = (e: MessageEvent) => {
                 const data = JSON.parse(e.data);
 
-                if (data.shape == "rectangle") {
-                    drawRoom.setRectangles(data);
-                }
-                else if (data.shape == "circle") {
-                    drawRoom.setCircles(data);
-                }
-                else if (data.shape == "line") {
-                    drawRoom.setLines(data);
-                }
-                else if (data.shape == "text") {
-                    drawRoom.setTexts(data);
-                }
-                else if (data.shape == "eraser") {
+                if (data.shape == "eraser") {
                     drawRoom.eraseByCode(data.code);
                 }
-                else if (data.shape == "pencil") {
-                    drawRoom.setPathData(data);
+                else {
+                    drawRoom.addShape(data);
                 }
                 render(drawRoom);
         }
     }
 
-    sendMessage(message: Rectangle | Circle | Text | Line | Line[] | Eraser) {
+    sendMessage(message: Rectangle | Circle | Text | Line | Pencil | Eraser) {
             this.drawRoom.getWs().send(JSON.stringify(
                 {
                     message,

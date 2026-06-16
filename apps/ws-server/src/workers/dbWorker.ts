@@ -1,26 +1,37 @@
 import { Worker } from "bullmq";
 import { prismaClient } from "@repo/db/client";
-import { DB_WRITE_QUEUE, PERSIST_CHAT_JOB, PersistChatPayload } from "../redis/queue.js";
+import { DB_WRITE_QUEUE, PERSIST_SHAPE_JOB, PersistShapePayload } from "../redis/queue.js";
 import { logger } from "../logger.js";
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 const url = new URL(REDIS_URL);
 
-const worker = new Worker<PersistChatPayload>(
+const worker = new Worker<PersistShapePayload>(
     DB_WRITE_QUEUE,
     async (job) => {
-        if (job.name !== PERSIST_CHAT_JOB) return;
+        if (job.name !== PERSIST_SHAPE_JOB) return;
 
         const { roomId, userId, message } = job.data;
-        const msg = message as { shape?: string };
+        const msg = message as { shape?: string; code?: string };
+        const code = msg.code;
+        if (!code) return;
 
-        if (msg.shape === "eraser") return;
+        if (msg.shape === "eraser") {
+            await prismaClient.shape.updateMany({
+                where: { id: code, roomId },
+                data: { deletedAt: new Date() },
+            });
+            logger.info({ roomId, userId, code, jobId: job.id }, "Shape soft-deleted");
+            return;
+        }
 
-        await prismaClient.chat.create({
-            data: { roomId, message, userId },
+        await prismaClient.shape.upsert({
+            where: { id: code },
+            create: { id: code, roomId, userId, type: msg.shape ?? "unknown", data: message },
+            update: { data: message, deletedAt: null },
         });
 
-        logger.info({ roomId, userId, jobId: job.id }, "Chat persisted");
+        logger.info({ roomId, userId, code, jobId: job.id }, "Shape persisted");
     },
     {
         connection: {

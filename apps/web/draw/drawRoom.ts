@@ -1,4 +1,4 @@
-import { Rectangle, Circle, Line, Text, Shape } from "./types/shape";
+import { Rectangle, Circle, Line, Text, Shape, Pencil } from "./types/shape";
 function decodeUserId(token: string): string | null {
     try {
         const payload = JSON.parse(atob(token.split('.')[1] ?? ''));
@@ -7,7 +7,7 @@ function decodeUserId(token: string): string | null {
         return null;
     }
 }
-import { deleteChat, getExistingShapes } from "./utils/request";
+import { getExistingShapes } from "./utils/request";
 import { render } from "./handlers/renderer";
 import { EventHandlers } from "./handlers/eventHandlers";
 import { MessageHandler } from "./handlers/messageHandler";
@@ -60,28 +60,10 @@ export default class DrawRoom {
         this.history = new HistoryManager(this);
 
         getExistingShapes(this.roomId)
-            .then((e: any) => {
-                (e.messages).map((item: any) => {
-                    const data = item.message;
-                    if (data.shape == "rectangle") {
-                        this.rectangles.push(data);
-                    }
-                    else if (data.shape == "circle") {
-                        this.circles.push(data);
-                    }
-                    else if (data.shape == "line") {
-                        this.lines.push(data);
-                    }
-                    else if (data.shape == "text") {
-                        this.texts.push(data);
-                    }
-                    else if (data.shape == "eraser") {
-                        this.eraseByCode(data.code);
-                    }
-                    else if (data.shape == "pencil") {
-                        this.pathData.push(data);
-                    }
-                })
+            .then((e) => {
+                for (const stored of e.shapes) {
+                    this.addShape(stored.data);
+                }
                 render(this);
             })
 
@@ -167,22 +149,25 @@ export default class DrawRoom {
     undo(): void { this.history.undo(); }
     redo(): void { this.history.redo(); }
 
-    /** Append a shape to its matching array based on its `shape` discriminator. */
+    // Pencil arrives aggregated and is expanded into Line segments in memory.
     addShape(shape: Shape): void {
         switch (shape.shape) {
             case "rectangle": this.rectangles.push(shape as Rectangle); break;
             case "circle": this.circles.push(shape as Circle); break;
             case "line": this.lines.push(shape as Line); break;
             case "text": this.texts.push(shape as Text); break;
-            case "pencil": this.pathData.push(shape as Line); break;
+            case "pencil": this.pathData.push(...expandPencil(shape as Pencil)); break;
         }
     }
 
-    /** All shapes (across every array) that share the given code. */
+    // Pencil segments are collapsed back into one aggregated Pencil.
     getShapesByCode(code: string): Shape[] {
-        return [
-            ...this.rectangles, ...this.circles, ...this.lines, ...this.texts, ...this.pathData
-        ].filter(s => s.code === code);
+        const single = [...this.rectangles, ...this.circles, ...this.lines, ...this.texts]
+            .find(s => s.code === code);
+        if (single) return [single];
+        const segs = this.pathData.filter(s => s.code === code);
+        if (segs.length) return [aggregatePencil(segs)];
+        return [];
     }
 
     moveSelectedShapes(dx: number, dy: number): void {
@@ -225,7 +210,6 @@ export default class DrawRoom {
         );
         if (!code) return;
         const removed = this.getShapesByCode(code);
-        deleteChat(code);
         this.eraseByCode(code);
         this.messageHandler.sendMessage({ shape: "eraser", code });
         this.history.record({ type: "erase", shapes: removed });
@@ -234,4 +218,31 @@ export default class DrawRoom {
     kill() {
         this.eventHandler.kill();
     }
+}
+
+export function expandPencil(pencil: Pencil): Line[] {
+    const pts = pencil.points ?? [];
+    const segs: Line[] = [];
+    for (let i = 0; i < pts.length - 1; i++) {
+        segs.push({
+            x: pts[i]![0]!, y: pts[i]![1]!,
+            toX: pts[i + 1]![0]!, toY: pts[i + 1]![1]!,
+            shape: "pencil", color: pencil.color, code: pencil.code,
+        });
+    }
+    return segs;
+}
+
+export function aggregatePencil(segments: Line[]): Pencil {
+    const first = segments[0];
+    const points: number[][] = [];
+    if (first) {
+        points.push([first.x, first.y]);
+        for (const s of segments) points.push([s.toX, s.toY]);
+    }
+    return {
+        x: first?.x ?? 0, y: first?.y ?? 0,
+        shape: "pencil", color: first?.color ?? "#ffffff",
+        code: first?.code ?? "", points,
+    };
 }

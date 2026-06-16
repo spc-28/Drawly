@@ -1,7 +1,7 @@
 import { drawCircle, drawLine, drawPencil, drawRectangle } from "../utils/drawing";
 import { getRandomHexColor } from "../utils/virtual";
 import { Eraser, Line } from "../types/shape";
-import DrawRoom from "../drawRoom";
+import DrawRoom, { aggregatePencil } from "../drawRoom";
 import { render } from "./renderer";
 import { findHitTextShape, findShapesInRect } from "../utils/hitTest";
 
@@ -303,7 +303,6 @@ export class EventHandlers {
                 this.drawRoom.setInitY(arr[1]);
                 this.drawRoom.setPathData(pencil);
                 this.currentStroke.push(pencil);
-                this.drawRoom.messageHandler.sendMessage(pencil);
             }
 
             else if (this.drawRoom.getTool() == "Rectangle") {
@@ -385,7 +384,9 @@ export class EventHandlers {
 
         if (this.drawRoom.getTool() == "Pencil") {
             if (this.currentStroke.length > 0) {
-                this.drawRoom.history.record({ type: "add", shapes: this.currentStroke });
+                const stroke = aggregatePencil(this.currentStroke);
+                this.drawRoom.messageHandler.sendMessage(stroke);
+                this.drawRoom.history.record({ type: "add", shapes: [stroke] });
                 this.currentStroke = [];
             }
             return;

@@ -1,5 +1,5 @@
 import { publish } from "../redis/pubsub.js";
-import { enqueueChatPersist } from "../redis/queue.js";
+import { enqueueShapePersist } from "../redis/queue.js";
 import { getUser } from "../store/userStore.js";
 import { WebSocket, RawData } from "ws";
 import { logger } from "../logger.js";
@@ -43,10 +43,7 @@ export async function handleMessage(socket: WebSocket, userId: string, data: Raw
         if (!message) return;
 
         await publish(roomId, userId, message);
-
-        if (message.shape !== "eraser") {
-            await enqueueChatPersist(roomId, userId, message);
-        }
+        await enqueueShapePersist(roomId, userId, message);
 
         logger.info({ roomId, userId }, "Message published and enqueued");
     }

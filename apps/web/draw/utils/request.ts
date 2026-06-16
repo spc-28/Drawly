@@ -1,9 +1,15 @@
 const HTTP_LINK = process.env.NEXT_PUBLIC_HTTP_URL;
 
-export async function getExistingShapes(roomId: number):Promise<[]> {
+export interface StoredShape {
+  id: string;
+  type: string;
+  data: any;
+}
+
+export async function getExistingShapes(roomId: number): Promise<{ shapes: StoredShape[] }> {
   try {
     const response = await fetch(
-      `${HTTP_LINK}/api/v1/chat/${roomId}`,
+      `${HTTP_LINK}/api/v1/shape/${roomId}`,
       {
         method: "GET",
         headers: {
@@ -15,36 +21,10 @@ export async function getExistingShapes(roomId: number):Promise<[]> {
       throw new Error(`Response status: ${response.status}`);
     }
 
-    const messages = await response.json();
-    return messages;
+    return await response.json();
   }
   catch (e) {
     console.log(e);
-    return[];
+    return { shapes: [] };
   }
-
-}
-
-export async function deleteChat(code: string){
-  try {
-    const response = await fetch(
-      `${HTTP_LINK}/api/v1/chat/`,
-      {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body:JSON.stringify({code})
-      }
-    );
-    if (!response.ok) {
-      throw new Error(`Response status: ${response.status}`);
-    }
-  }
-  catch (e) {
-    console.log(e);
-
-  }
-
 }

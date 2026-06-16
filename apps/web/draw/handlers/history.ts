@@ -1,6 +1,5 @@
 import DrawRoom from "../drawRoom";
 import { Shape } from "../types/shape";
-import { deleteChat } from "../utils/request";
 import { render } from "./renderer";
 
 export type HistoryEntry =
@@ -64,7 +63,6 @@ export class HistoryManager {
         const codes = new Set(shapes.map(s => s.code).filter(Boolean) as string[]);
         for (const code of codes) {
             this.drawRoom.eraseByCode(code);
-            deleteChat(code);
             this.drawRoom.messageHandler.sendMessage({ shape: "eraser", code });
         }
     }

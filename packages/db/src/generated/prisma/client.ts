@@ -52,7 +52,7 @@ export type User = Prisma.UserModel
  */
 export type Room = Prisma.RoomModel
 /**
- * Model Chat
+ * Model Shape
  * 
  */
-export type Chat = Prisma.ChatModel
+export type Shape = Prisma.ShapeModel

@@ -28,3 +28,8 @@ export interface Eraser {
     shape: string;
     code: string;
 }
+
+// A whole pencil stroke as one shape: a polyline of [x, y] points.
+export interface Pencil extends Shape {
+    points: number[][];
+}

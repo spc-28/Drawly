@@ -3,20 +3,20 @@ import { logger } from "../logger.js";
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 export const DB_WRITE_QUEUE = "db-writes";
-export const PERSIST_CHAT_JOB = "persist-chat";
+export const PERSIST_SHAPE_JOB = "persist-shape";
 
-export interface PersistChatPayload {
+export interface PersistShapePayload {
     roomId: number;
     userId: string;
     message: object;
 }
 
-let dbWriteQueue: Queue<PersistChatPayload>;
+let dbWriteQueue: Queue<PersistShapePayload>;
 
-export function getQueue(): Queue<PersistChatPayload> {
+export function getQueue(): Queue<PersistShapePayload> {
     if (!dbWriteQueue) {
         const url = new URL(REDIS_URL);
-        dbWriteQueue = new Queue<PersistChatPayload>(DB_WRITE_QUEUE, {
+        dbWriteQueue = new Queue<PersistShapePayload>(DB_WRITE_QUEUE, {
             connection: {
                 host: url.hostname,
                 port: Number(url.port) || 6379,
@@ -32,8 +32,8 @@ export function getQueue(): Queue<PersistChatPayload> {
     return dbWriteQueue;
 }
 
-export async function enqueueChatPersist(roomId: number, userId: string, message: object): Promise<void> {
-    await getQueue().add(PERSIST_CHAT_JOB, { roomId, userId, message });
+export async function enqueueShapePersist(roomId: number, userId: string, message: object): Promise<void> {
+    await getQueue().add(PERSIST_SHAPE_JOB, { roomId, userId, message });
 }
 
 export async function closeQueue(): Promise<void> {
