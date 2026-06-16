@@ -14,24 +14,42 @@ function App() {
         password: '',
     });
 
+    const demoUsers = [
+        { label: 'User 1', username: 'user1@domain.com', password: '1234567890' },
+        { label: 'User 2', username: 'user2@domain.com', password: '1234567890' },
+    ];
+
+    const fillDemo = (u: { username: string; password: string }) =>
+        setFormData((prev) => ({ ...prev, username: u.username, password: u.password }));
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        let res = { token: "" };
+
+        if (!formData.username.trim() || !formData.password.trim()) {
+            toast.error("Please enter your email and password.");
+            return;
+        }
+        if (!isLogin && !formData.name.trim()) {
+            toast.error("Please enter your name.");
+            return;
+        }
+
         setLoading(true);
-        if (isLogin) {
-            res = await signIn(formData.username, formData.password);
-        }
-        else {
-            res = await signUp(formData.username, formData.password, formData.name);
-        }
-        if (res.token != "Invalid") {
-            localStorage.setItem('token', res.token);
-            toast.success("Login Success");
+        let res;
+        try {
+            res = isLogin
+                ? await signIn(formData.username, formData.password)
+                : await signUp(formData.username, formData.password, formData.name);
+        } finally {
             setLoading(false);
-            redirect('/draw');
         }
-        else {
-            toast.error("Login Failed");
+
+        if (res.token && res.token !== "Invalid") {
+            localStorage.setItem('token', res.token);
+            toast.success(isLogin ? "Signed in successfully." : "Account created.");
+            redirect('/draw');
+        } else {
+            toast.error(res.error || (isLogin ? "Sign in failed." : "Sign up failed."));
         }
     }
 
@@ -142,15 +160,42 @@ function App() {
                         </p>
                     </div>
                 </div>
-            </div>{isLogin?
-            <div className='text-white mt-4'>
-                <p>Sign In with users</p>
-                <p>user 1 email: user1@domain.com</p>
-                <p>user 1 password: 1234567890</p>
-                <br/>
-                <p>user 2 email: user2@domain.com</p>
-                <p>user 2 password: 1234567890</p>
-            </div>:""}
+            </div>
+
+            {isLogin && (
+                <div className="w-full max-w-md mt-6 relative">
+                    <div className="bg-[#121212] border border-[#1C726D]/30 rounded-xl p-5">
+                        <p className="text-[#ECC19C] text-sm font-semibold text-center mb-4">
+                            Demo accounts — try without signing up
+                        </p>
+                        <div className="space-y-3">
+                            {demoUsers.map((u) => (
+                                <div
+                                    key={u.username}
+                                    className="flex items-center justify-between gap-3 bg-black/40 border border-[#1C726D]/20 rounded-lg px-4 py-3"
+                                >
+                                    <div className="min-w-0">
+                                        <p className="text-white text-sm font-medium">{u.label}</p>
+                                        <p className="text-[#1C726D] text-xs truncate">
+                                            <span className="text-[#ECC19C]/80">Email:</span> {u.username}
+                                        </p>
+                                        <p className="text-[#1C726D] text-xs">
+                                            <span className="text-[#ECC19C]/80">Password:</span> {u.password}
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => fillDemo(u)}
+                                        className="shrink-0 bg-[#1C726D] text-white text-sm px-3 py-1.5 rounded-lg hover:bg-[#1C726D]/90 transition-colors"
+                                    >
+                                        Use
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

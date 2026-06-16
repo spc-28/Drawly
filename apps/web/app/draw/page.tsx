@@ -14,20 +14,28 @@ export default function Room() {
 
   const handleJoinRoom = (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success(`Joining room: ${roomId}`);
-    redirect(`/draw/${roomId}`)
+    const id = Number(roomId.trim());
+    if (!Number.isInteger(id) || id <= 0) {
+      toast.error("Please enter a valid room ID.");
+      return;
+    }
+    toast.success(`Joining room: ${id}`);
+    redirect(`/draw/${id}`);
   };
 
   const handleCreateRoom = async () => {
     setLoading(true);
-    const { room } = await createRoom();
-    if (room) {
-      toast.success("Room Created");
+    let res;
+    try {
+      res = await createRoom();
+    } finally {
       setLoading(false);
-      redirect(`/draw/${room.id}`)
     }
-    else {
-      toast.error("Room not Created");
+    if (res.room) {
+      toast.success("Room created.");
+      redirect(`/draw/${res.room.id}`);
+    } else {
+      toast.error(res.error || "Could not create room.");
     }
   };
 
