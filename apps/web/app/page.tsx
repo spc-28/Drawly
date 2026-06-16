@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Anton } from "next/font/google";
 import {
   ArrowUpRight,
@@ -29,9 +30,7 @@ export default function Home() {
         {/* ───────────────────────── NAV ───────────────────────── */}
         <nav className="flex items-center justify-between py-6">
           <Link href="/" className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#ECC19C] text-[#121212]">
-              <img className="h-fit w-fit" src="/image.png" alt="Drawly logo" />
-            </span>
+            <Image src="/image.png" alt="Drawly logo" width={32} height={32} className="h-8 w-8 rounded-lg object-contain" priority />
             <span className={`${anton.className} text-xl tracking-wide`}>DRAWLY</span>
           </Link>
           <div className="hidden items-center gap-9 text-sm text-[#ECE3D2]/60 md:flex">
