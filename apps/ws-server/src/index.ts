@@ -4,13 +4,16 @@ import { handleConnection } from "./handlers/connectionHandler.js";
 import { getUsers, removeUser, localBroadcast } from "./store/userStore.js";
 import { connectPubSub, closePubSub } from "./redis/pubsub.js";
 import { closeQueue } from "./redis/queue.js";
+import { startWorker, closeWorker } from "./workers/dbWorker.js";
 import { logger } from "./logger.js";
 
-const server = new WebSocketServer({ port: Number(WS_PORT) });
+const PORT = Number(process.env.PORT) || Number(WS_PORT);
+const server = new WebSocketServer({ port: PORT });
 
 server.on("connection", handleConnection);
 
 await connectPubSub(localBroadcast);
+startWorker();
 
 const HEARTBEAT_INTERVAL_MS = 30_000;
 
@@ -27,7 +30,7 @@ const heartbeat = setInterval(() => {
     }
 }, HEARTBEAT_INTERVAL_MS);
 
-logger.info({ port: WS_PORT }, "WS server running");
+logger.info({ port: PORT }, "WS server running");
 
 async function shutdown(signal: string) {
     logger.info({ signal }, "Shutting down gracefully");
@@ -37,7 +40,7 @@ async function shutdown(signal: string) {
         user.socket.close(1001, "Server shutting down");
     }
 
-    await Promise.all([closePubSub(), closeQueue()]);
+    await Promise.all([closePubSub(), closeQueue(), closeWorker()]);
 
     server.close(() => {
         logger.info("WS server closed");

@@ -8,13 +8,9 @@
     "lint": "eslint src/",
     "check-types": "tsc --noEmit",
     "start": "node ./dist/index.js",
-    "worker": "node ./dist/workers/dbWorker.js",
     "dev": "pnpm build && pnpm start"
   },
   "devDependencies": {
-    "@repo/backend-common": "workspace:*",
-    "@repo/common": "workspace:*",
-    "@repo/db": "workspace:*",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/jsonwebtoken": "~9.0.7",
@@ -25,6 +21,9 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@repo/backend-common": "workspace:*",
+    "@repo/common": "workspace:*",
+    "@repo/db": "workspace:*",
     "@types/ws": "^8.5.13",
     "bullmq": "^5.77.2",
     "ioredis": "^5.10.1",

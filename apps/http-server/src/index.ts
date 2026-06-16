@@ -41,7 +41,8 @@ app.get('/health', (_req, res) => {
     res.status(200).json({ status: "ok", uptime: process.uptime() });
 });
 
-const httpServer = app.listen(HTTP_PORT, () => logger.info(`Listening on Port ${HTTP_PORT}`));
+const PORT = process.env.PORT || HTTP_PORT;
+const httpServer = app.listen(PORT, () => logger.info(`Listening on Port ${PORT}`));
 
 function shutdown(signal: string) {
     logger.info(`${signal} received, shutting down gracefully`);

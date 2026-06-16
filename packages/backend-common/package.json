@@ -5,12 +5,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "build": "tsc -b",
     "lint": "eslint src/",
-    "check-types": "tsc --noEmit",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "check-types": "tsc --noEmit"
   },
   "exports": {
-    "./config": "./src/index.ts"
+    "./config": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
   },
   "keywords": [],
   "author": "",

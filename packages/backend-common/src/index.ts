@@ -1,5 +1,10 @@
-import 'dotenv/config';
+import { config } from "dotenv";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
 import jwt from "jsonwebtoken";
+
+config();
+config({ path: resolve(dirname(fileURLToPath(import.meta.url)), "../.env") });
 
 if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET environment variable is not set");
