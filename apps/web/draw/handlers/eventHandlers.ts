@@ -1,6 +1,6 @@
 import { drawCircle, drawLine, drawPencil, drawRectangle } from "../utils/drawing";
 import { getRandomHexColor } from "../utils/virtual";
-import { Eraser } from "../types/shape";
+import { Eraser, Line } from "../types/shape";
 import DrawRoom from "../drawRoom";
 import { render } from "./renderer";
 import { findHitTextShape, findShapesInRect } from "../utils/hitTest";
@@ -17,6 +17,10 @@ export class EventHandlers {
     private isMovingSelection: boolean = false;
     private lastMoveX: number = 0;
     private lastMoveY: number = 0;
+    private currentStroke: Line[] = [];
+    private moveCodes: string[] = [];
+    private moveTotalX: number = 0;
+    private moveTotalY: number = 0;
 
     constructor(drawRoom: DrawRoom) {
             this.drawRoom = drawRoom;
@@ -77,6 +81,7 @@ export class EventHandlers {
             };
             this.drawRoom.setTexts(text);
             this.drawRoom.messageHandler.sendMessage(text);
+            this.drawRoom.history.record({ type: "add", shapes: [text] });
         }
         render(this.drawRoom);
     }
@@ -88,6 +93,22 @@ export class EventHandlers {
     }
 
     keyDown = (event: KeyboardEvent) => {
+        // Undo / Redo (Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z, Ctrl+Y) — handled before text input
+        if (event.ctrlKey || event.metaKey) {
+            const key = event.key.toLowerCase();
+            if (key === 'z') {
+                event.preventDefault();
+                if (event.shiftKey) this.drawRoom.redo();
+                else this.drawRoom.undo();
+                return;
+            }
+            if (key === 'y') {
+                event.preventDefault();
+                this.drawRoom.redo();
+                return;
+            }
+        }
+
         if (this.drawRoom.typingState) {
             const ts = this.drawRoom.typingState;
             if (event.key === 'Enter') {
@@ -171,6 +192,9 @@ export class EventHandlers {
             this.isMovingSelection = true;
             this.lastMoveX = event.clientX;
             this.lastMoveY = event.clientY;
+            this.moveCodes = Array.from(this.drawRoom.selectedCodes);
+            this.moveTotalX = 0;
+            this.moveTotalY = 0;
             this.updateCursor();
             return;
         }
@@ -208,6 +232,7 @@ export class EventHandlers {
         if (tool == "Pencil" || tool == "Line") {
             this.drawRoom.getCtx().fillStyle = this.drawRoom.getColor() || "#ffffff";
             this.pencilCode = getRandomHexColor();
+            if (tool == "Pencil") this.currentStroke = [];
         }
     }
 
@@ -219,6 +244,8 @@ export class EventHandlers {
             const dy = (event.clientY - this.lastMoveY) / scale;
             this.lastMoveX = event.clientX;
             this.lastMoveY = event.clientY;
+            this.moveTotalX += dx;
+            this.moveTotalY += dy;
             this.drawRoom.moveSelectedShapes(dx, dy);
             return;
         }
@@ -265,6 +292,7 @@ export class EventHandlers {
                 this.drawRoom.setInitX(arr[0]);
                 this.drawRoom.setInitY(arr[1]);
                 this.drawRoom.setPathData(pencil);
+                this.currentStroke.push(pencil);
                 this.drawRoom.messageHandler.sendMessage(pencil);
             }
 
@@ -315,6 +343,14 @@ export class EventHandlers {
         // End moving selection
         if (this.isMovingSelection) {
             this.isMovingSelection = false;
+            if (this.moveCodes.length > 0 && (this.moveTotalX !== 0 || this.moveTotalY !== 0)) {
+                this.drawRoom.history.record({
+                    type: "move", codes: this.moveCodes, dx: this.moveTotalX, dy: this.moveTotalY
+                });
+            }
+            this.moveCodes = [];
+            this.moveTotalX = 0;
+            this.moveTotalY = 0;
             this.updateCursor();
             return;
         }
@@ -337,6 +373,14 @@ export class EventHandlers {
 
         this.drawRoom.setPointerStatus(false);
 
+        if (this.drawRoom.getTool() == "Pencil") {
+            if (this.currentStroke.length > 0) {
+                this.drawRoom.history.record({ type: "add", shapes: this.currentStroke });
+                this.currentStroke = [];
+            }
+            return;
+        }
+
         if (this.drawRoom.getTool() == "Rectangle") {
             const rect = {
                 x: this.drawRoom.getInitX(),
@@ -349,6 +393,7 @@ export class EventHandlers {
             }
             this.drawRoom.setRectangles(rect);
             this.drawRoom.messageHandler.sendMessage(rect);
+            this.drawRoom.history.record({ type: "add", shapes: [rect] });
         }
 
         else if (this.drawRoom.getTool() == "Eraser") {
@@ -362,6 +407,7 @@ export class EventHandlers {
             if (hit && hit.code) {
                 this.drawRoom.removeText(hit.code);
                 this.drawRoom.messageHandler.sendMessage({ shape: "eraser", code: hit.code } as Eraser);
+                this.drawRoom.history.record({ type: "erase", shapes: [hit] });
                 const lines = hit.text.split('\n');
                 this.drawRoom.typingState = { x: hit.x, y: hit.y, lines, cursorLine: lines.length - 1, cursorVisible: true, originalText: hit };
                 if (this.cursorInterval) clearInterval(this.cursorInterval);
@@ -387,6 +433,7 @@ export class EventHandlers {
             }
             this.drawRoom.setCircles(circle);
             this.drawRoom.messageHandler.sendMessage(circle);
+            this.drawRoom.history.record({ type: "add", shapes: [circle] });
         }
         else if (this.drawRoom.getTool() == "Line") {
             const line = {
@@ -400,6 +447,7 @@ export class EventHandlers {
             }
             this.drawRoom.setLines(line);
             this.drawRoom.messageHandler.sendMessage(line);
+            this.drawRoom.history.record({ type: "add", shapes: [line] });
         }
     }
 

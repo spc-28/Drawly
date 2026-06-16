@@ -9,9 +9,11 @@ import {
   Plus,
   MousePointer2,
   Pencil,
+  Redo2,
   Share,
   Square,
   Type,
+  Undo2,
 } from "lucide-react";
 import DrawRoom from "../draw/drawRoom";
 import toast from "react-hot-toast";
@@ -65,6 +67,19 @@ export default function Canvas({
         height={window.innerHeight}
         width={window.innerWidth}
       ></canvas>
+      <div className="absolute top-4 right-6 z-40 text-[#ECC19C]">
+        <Bar
+          onClick={() => {
+            navigator.clipboard.writeText(
+              `${window.location.origin}/draw/${roomId}`
+            );
+            toast.success("Link Copied");
+          }}
+          classname="px-4 cursor-pointer"
+        >
+          <Share />
+        </Bar>
+      </div>
       <div className="self-end flex justify-between w-full z-40 mb-4 px-6 text-[#ECC19C]">
         <div className="flex gap-3">
           <Bar classname="gap-3 items-center justify-between px-4">
@@ -87,16 +102,17 @@ export default function Canvas({
               onClick={() => session?.zoomIn()}
             />
           </Bar>
-          <Bar
-            onClick={() => {
-              navigator.clipboard.writeText(
-                `http://localhost:3000/draw/${roomId}`
-              );
-              toast.success("Link Copied");
-            }}
-            classname="px-4 cursor-pointer"
-          >
-            <Share />
+          <Bar classname="gap-4 px-4 items-center">
+            <Undo2
+              className="cursor-pointer"
+              onClick={() => session?.undo()}
+              aria-label="Undo"
+            />
+            <Redo2
+              className="cursor-pointer"
+              onClick={() => session?.redo()}
+              aria-label="Redo"
+            />
           </Bar>
         </div>
         <Bar classname="justify-between px-9 ">

@@ -1,4 +1,4 @@
-import { Rectangle, Circle, Line, Text } from "./types/shape";
+import { Rectangle, Circle, Line, Text, Shape } from "./types/shape";
 function decodeUserId(token: string): string | null {
     try {
         const payload = JSON.parse(atob(token.split('.')[1] ?? ''));
@@ -11,6 +11,7 @@ import { deleteChat, getExistingShapes } from "./utils/request";
 import { render } from "./handlers/renderer";
 import { EventHandlers } from "./handlers/eventHandlers";
 import { MessageHandler } from "./handlers/messageHandler";
+import { HistoryManager } from "./handlers/history";
 import { findHitShape } from "./utils/hitTest";
 
 export default class DrawRoom {
@@ -41,6 +42,7 @@ export default class DrawRoom {
 
     public eventHandler: EventHandlers;
     public messageHandler: MessageHandler;
+    public history: HistoryManager;
 
     constructor(canvas: HTMLCanvasElement, roomId: number, ws: WebSocket, onZoomChange?: (scale: number) => void) {
         this.canvas = canvas;
@@ -54,6 +56,7 @@ export default class DrawRoom {
 
         this.eventHandler = new EventHandlers(this);
         this.messageHandler = new MessageHandler(this);
+        this.history = new HistoryManager(this);
 
         getExistingShapes(this.roomId)
             .then((e: any) => {
@@ -155,22 +158,47 @@ export default class DrawRoom {
         this.selectionRect = null;
     }
 
+    undo(): void { this.history.undo(); }
+    redo(): void { this.history.redo(); }
+
+    /** Append a shape to its matching array based on its `shape` discriminator. */
+    addShape(shape: Shape): void {
+        switch (shape.shape) {
+            case "rectangle": this.rectangles.push(shape as Rectangle); break;
+            case "circle": this.circles.push(shape as Circle); break;
+            case "line": this.lines.push(shape as Line); break;
+            case "text": this.texts.push(shape as Text); break;
+            case "pencil": this.pathData.push(shape as Line); break;
+        }
+    }
+
+    /** All shapes (across every array) that share the given code. */
+    getShapesByCode(code: string): Shape[] {
+        return [
+            ...this.rectangles, ...this.circles, ...this.lines, ...this.texts, ...this.pathData
+        ].filter(s => s.code === code);
+    }
+
     moveSelectedShapes(dx: number, dy: number): void {
-        const codes = this.selectedCodes;
+        this.moveShapesByCodes(this.selectedCodes, dx, dy);
+    }
+
+    moveShapesByCodes(codes: Iterable<string>, dx: number, dy: number): void {
+        const set = codes instanceof Set ? codes : new Set(codes);
         for (const rect of this.rectangles) {
-            if (rect.code && codes.has(rect.code)) { rect.x += dx; rect.y += dy; }
+            if (rect.code && set.has(rect.code)) { rect.x += dx; rect.y += dy; }
         }
         for (const circle of this.circles) {
-            if (circle.code && codes.has(circle.code)) { circle.x += dx; circle.y += dy; }
+            if (circle.code && set.has(circle.code)) { circle.x += dx; circle.y += dy; }
         }
         for (const line of this.lines) {
-            if (line.code && codes.has(line.code)) { line.x += dx; line.y += dy; line.toX += dx; line.toY += dy; }
+            if (line.code && set.has(line.code)) { line.x += dx; line.y += dy; line.toX += dx; line.toY += dy; }
         }
         for (const text of this.texts) {
-            if (text.code && codes.has(text.code)) { text.x += dx; text.y += dy; }
+            if (text.code && set.has(text.code)) { text.x += dx; text.y += dy; }
         }
         for (const pencil of this.pathData) {
-            if (pencil.code && codes.has(pencil.code)) { pencil.x += dx; pencil.y += dy; pencil.toX += dx; pencil.toY += dy; }
+            if (pencil.code && set.has(pencil.code)) { pencil.x += dx; pencil.y += dy; pencil.toX += dx; pencil.toY += dy; }
         }
         render(this);
     }
@@ -190,9 +218,11 @@ export default class DrawRoom {
             worldX, worldY
         );
         if (!code) return;
+        const removed = this.getShapesByCode(code);
         deleteChat(code);
         this.eraseByCode(code);
         this.messageHandler.sendMessage({ shape: "eraser", code });
+        this.history.record({ type: "erase", shapes: removed });
     }
 
     kill() {
