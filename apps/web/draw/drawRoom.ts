@@ -1,4 +1,4 @@
-import { Rectangle, Circle, Line, Text, Shape, Pencil } from "./types/shape";
+import { Rectangle, Circle, Line, Text, Shape, Pencil, Bounds } from "./types/shape";
 function decodeUserId(token: string): string | null {
     try {
         const payload = JSON.parse(atob(token.split('.')[1] ?? ''));
@@ -12,7 +12,7 @@ import { render } from "./handlers/renderer";
 import { EventHandlers } from "./handlers/eventHandlers";
 import { MessageHandler } from "./handlers/messageHandler";
 import { HistoryManager } from "./handlers/history";
-import { findHitShape } from "./utils/hitTest";
+import { findHitShape, getShapeBounds } from "./utils/hitTest";
 
 export default class DrawRoom {
     private canvas: HTMLCanvasElement;
@@ -158,6 +158,55 @@ export default class DrawRoom {
             case "text": this.texts.push(shape as Text); break;
             case "pencil": this.pathData.push(...expandPencil(shape as Pencil)); break;
         }
+    }
+
+    // Bounds of the single selected shape (null unless exactly one is selected).
+    getSelectedBounds(): Bounds | null {
+        if (this.selectedCodes.size !== 1) return null;
+        const code = [...this.selectedCodes][0]!;
+        const shape = this.getShapesByCode(code)[0];
+        return shape ? getShapeBounds(shape) : null;
+    }
+
+    // Replace the shape(s) with this code in place (used by remote updates + undo/redo).
+    upsertShapeLocal(data: Shape): void {
+        if (data.code) this.eraseByCode(data.code);
+        this.addShape(data);
+    }
+
+    // Map the selected shape's geometry from one bounds box to another.
+    resizeSelected(from: Bounds, to: Bounds): void {
+        const codes = this.selectedCodes;
+        const tx = (px: number) => from.width === 0 ? to.x : to.x + (px - from.x) / from.width * to.width;
+        const ty = (py: number) => from.height === 0 ? to.y : to.y + (py - from.y) / from.height * to.height;
+
+        for (const r of this.rectangles) {
+            if (!r.code || !codes.has(r.code)) continue;
+            const x1 = tx(r.x), y1 = ty(r.y), x2 = tx(r.x + r.width), y2 = ty(r.y + r.height);
+            r.x = x1; r.y = y1; r.width = x2 - x1; r.height = y2 - y1;
+        }
+        for (const l of this.lines) {
+            if (!l.code || !codes.has(l.code)) continue;
+            const x1 = tx(l.x), y1 = ty(l.y);
+            l.toX = tx(l.toX); l.toY = ty(l.toY); l.x = x1; l.y = y1;
+        }
+        for (const c of this.circles) {
+            if (!c.code || !codes.has(c.code)) continue;
+            c.x = to.x + to.width / 2; c.y = to.y + to.height / 2;
+            c.radius = Math.max(Math.abs(to.width), Math.abs(to.height)) / 2;
+        }
+        for (const t of this.texts) {
+            if (!t.code || !codes.has(t.code)) continue;
+            const ratio = from.height === 0 ? 1 : to.height / from.height;
+            const newFont = Math.max(4, (t.fontSize ?? 40) * ratio);
+            t.fontSize = newFont; t.x = to.x; t.y = to.y + newFont;
+        }
+        for (const p of this.pathData) {
+            if (!p.code || !codes.has(p.code)) continue;
+            const x1 = tx(p.x), y1 = ty(p.y);
+            p.toX = tx(p.toX); p.toY = ty(p.toY); p.x = x1; p.y = y1;
+        }
+        render(this);
     }
 
     // Pencil segments are collapsed back into one aggregated Pencil.

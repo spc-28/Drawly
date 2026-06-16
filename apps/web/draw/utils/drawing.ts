@@ -50,13 +50,15 @@ export function writeText(ctx: CanvasRenderingContext2D, text:Text, color?: stri
     else{
         ctx.fillStyle = text.color;
     }
-    ctx.font = "40px Arial";
+    const fontSize = text.fontSize ?? 40;
+    ctx.font = `${fontSize}px Arial`;
     if(text.text == "null"){
         return;
     }
+    const lineHeight = fontSize * 1.2;
     const lines = text.text.split('\n');
     lines.forEach((line, i) => {
-        ctx.fillText(line, text.x, text.y + i * 48);
+        ctx.fillText(line, text.x, text.y + i * lineHeight);
     });
 }
 

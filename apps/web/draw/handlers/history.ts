@@ -5,7 +5,8 @@ import { render } from "./renderer";
 export type HistoryEntry =
     | { type: "add"; shapes: Shape[] }
     | { type: "erase"; shapes: Shape[] }
-    | { type: "move"; codes: string[]; dx: number; dy: number };
+    | { type: "move"; codes: string[]; dx: number; dy: number }
+    | { type: "update"; before: Shape[]; after: Shape[] };
 
 export class HistoryManager {
     private drawRoom: DrawRoom;
@@ -19,7 +20,7 @@ export class HistoryManager {
 
     /** Record a new local action. Clears the redo stack (new branch of history). */
     record(entry: HistoryEntry): void {
-        if (entry.type !== "move" && entry.shapes.length === 0) return;
+        if ((entry.type === "add" || entry.type === "erase") && entry.shapes.length === 0) return;
         this.undoStack.push(entry);
         if (this.undoStack.length > this.limit) this.undoStack.shift();
         this.redoStack = [];
@@ -67,15 +68,34 @@ export class HistoryManager {
         }
     }
 
+    /** Replace shapes in place (resize/move target state) + broadcast + persist. */
+    private putShapes(shapes: Shape[]): void {
+        for (const shape of shapes) {
+            this.drawRoom.upsertShapeLocal(shape);
+            this.drawRoom.messageHandler.sendMessage(shape as never);
+        }
+    }
+
+    private moveAndBroadcast(codes: string[], dx: number, dy: number): void {
+        this.drawRoom.moveShapesByCodes(codes, dx, dy);
+        for (const code of codes) {
+            for (const s of this.drawRoom.getShapesByCode(code)) {
+                this.drawRoom.messageHandler.sendMessage(s as never);
+            }
+        }
+    }
+
     private applyForward(entry: HistoryEntry): void {
         if (entry.type === "add") this.addShapes(entry.shapes);
         else if (entry.type === "erase") this.removeShapes(entry.shapes);
-        else this.drawRoom.moveShapesByCodes(entry.codes, entry.dx, entry.dy);
+        else if (entry.type === "update") this.putShapes(entry.after);
+        else this.moveAndBroadcast(entry.codes, entry.dx, entry.dy);
     }
 
     private applyInverse(entry: HistoryEntry): void {
         if (entry.type === "add") this.removeShapes(entry.shapes);
         else if (entry.type === "erase") this.addShapes(entry.shapes);
-        else this.drawRoom.moveShapesByCodes(entry.codes, -entry.dx, -entry.dy);
+        else if (entry.type === "update") this.putShapes(entry.before);
+        else this.moveAndBroadcast(entry.codes, -entry.dx, -entry.dy);
     }
 }

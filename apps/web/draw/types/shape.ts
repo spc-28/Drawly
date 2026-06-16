@@ -17,6 +17,7 @@ export interface Circle extends Shape {
 
 export interface Text extends Shape {
     text: string;
+    fontSize?: number;
 }
 
 export interface Line extends Shape {
@@ -33,3 +34,12 @@ export interface Eraser {
 export interface Pencil extends Shape {
     points: number[][];
 }
+
+export interface Bounds {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+export type HandleId = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';

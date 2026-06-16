@@ -15,7 +15,7 @@ export class MessageHandler {
                     drawRoom.eraseByCode(data.code);
                 }
                 else {
-                    drawRoom.addShape(data);
+                    drawRoom.upsertShapeLocal(data);
                 }
                 render(drawRoom);
         }

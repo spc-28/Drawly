@@ -1,4 +1,6 @@
 import { drawCircle, drawLine, drawPencil, drawRectangle, writeText } from "../utils/drawing";
+import { handlePositions, getShapeBounds } from "../utils/hitTest";
+import { HandleId } from "../types/shape";
 import DrawRoom from "../drawRoom";
 
 
@@ -53,11 +55,8 @@ class Renderer {
             }
             for (const text of drawRoom.getTexts()) {
                 if (!text.code || !codes.has(text.code)) continue;
-                const tLines = text.text.split('\n');
-                const maxLen = Math.max(...tLines.map(l => l.length));
-                const tw = maxLen * 22 + 10;
-                const th = (tLines.length - 1) * 48 + 50;
-                ctx.strokeRect(text.x - 5, text.y - 45, tw, th);
+                const b = getShapeBounds(text);
+                ctx.strokeRect(b.x - 5, b.y - 5, b.width + 10, b.height + 10);
             }
             // Pencil strokes: highlight each selected segment with a thick transparent stroke
             ctx.lineWidth = 14;
@@ -70,6 +69,26 @@ class Renderer {
                 ctx.stroke();
             }
             ctx.globalAlpha = 1;
+            ctx.restore();
+        }
+
+        // Resize handles for a single selected shape (not while marquee-selecting).
+        const bounds = drawRoom.getSelectedBounds();
+        if (bounds && !drawRoom.selectionRect) {
+            const scale = drawRoom.getScale();
+            const hs = 8 / scale;
+            ctx.save();
+            ctx.strokeStyle = '#4a90d9';
+            ctx.lineWidth = 1.5 / scale;
+            ctx.setLineDash([]);
+            ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
+            ctx.fillStyle = '#ffffff';
+            const pos = handlePositions(bounds);
+            for (const id of Object.keys(pos) as HandleId[]) {
+                const [hx, hy] = pos[id];
+                ctx.fillRect(hx - hs / 2, hy - hs / 2, hs, hs);
+                ctx.strokeRect(hx - hs / 2, hy - hs / 2, hs, hs);
+            }
             ctx.restore();
         }
 

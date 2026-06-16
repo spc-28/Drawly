@@ -1,6 +1,82 @@
-import { Rectangle, Circle, Line, Text } from "../types/shape";
+import { Rectangle, Circle, Line, Text, Shape, Pencil, Bounds, HandleId } from "../types/shape";
 
 const TOLERANCE = 8;
+const HANDLE_HIT = 8;
+
+// Axis-aligned bounding box (top-left origin) of a single shape.
+export function getShapeBounds(shape: Shape): Bounds {
+    switch (shape.shape) {
+        case "rectangle": {
+            const r = shape as Rectangle;
+            return { x: Math.min(r.x, r.x + r.width), y: Math.min(r.y, r.y + r.height), width: Math.abs(r.width), height: Math.abs(r.height) };
+        }
+        case "circle": {
+            const c = shape as Circle;
+            const rad = Math.abs(c.radius);
+            return { x: c.x - rad, y: c.y - rad, width: rad * 2, height: rad * 2 };
+        }
+        case "line": {
+            const l = shape as Line;
+            return { x: Math.min(l.x, l.toX), y: Math.min(l.y, l.toY), width: Math.abs(l.toX - l.x), height: Math.abs(l.toY - l.y) };
+        }
+        case "text": {
+            const t = shape as Text;
+            const fontSize = t.fontSize ?? 40;
+            const lines = t.text.split('\n');
+            const maxLen = Math.max(1, ...lines.map(l => l.length));
+            const width = maxLen * fontSize * 0.55;
+            const height = (lines.length - 1) * fontSize * 1.2 + fontSize;
+            return { x: t.x, y: t.y - fontSize, width, height };
+        }
+        case "pencil": {
+            const pts = (shape as Pencil).points ?? [];
+            if (pts.length === 0) return { x: shape.x, y: shape.y, width: 0, height: 0 };
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            for (const [px, py] of pts) {
+                minX = Math.min(minX, px!); minY = Math.min(minY, py!);
+                maxX = Math.max(maxX, px!); maxY = Math.max(maxY, py!);
+            }
+            return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+        }
+        default:
+            return { x: shape.x, y: shape.y, width: 0, height: 0 };
+    }
+}
+
+// Screen position of each resize handle for a bounding box.
+export function handlePositions(b: Bounds): Record<HandleId, [number, number]> {
+    const { x, y, width: w, height: h } = b;
+    return {
+        nw: [x, y], n: [x + w / 2, y], ne: [x + w, y],
+        e: [x + w, y + h / 2], se: [x + w, y + h], s: [x + w / 2, y + h],
+        sw: [x, y + h], w: [x, y + h / 2],
+    };
+}
+
+// Which resize handle (if any) the point is over. Corners take priority over edges.
+export function hitResizeHandle(b: Bounds, x: number, y: number, scale: number): HandleId | null {
+    const tol = HANDLE_HIT / scale;
+    const pos = handlePositions(b);
+    const order: HandleId[] = ['nw', 'ne', 'se', 'sw', 'n', 'e', 's', 'w'];
+    for (const id of order) {
+        const [hx, hy] = pos[id];
+        if (Math.abs(x - hx) <= tol && Math.abs(y - hy) <= tol) return id;
+    }
+    return null;
+}
+
+// New normalized bounds when dragging `handle` to (px, py); the opposite edge stays fixed.
+export function resizeBounds(handle: HandleId, ob: Bounds, px: number, py: number): Bounds {
+    let left = ob.x, right = ob.x + ob.width, top = ob.y, bottom = ob.y + ob.height;
+    if (handle.includes('w')) left = px;
+    if (handle.includes('e')) right = px;
+    if (handle.includes('n')) top = py;
+    if (handle.includes('s')) bottom = py;
+    return {
+        x: Math.min(left, right), y: Math.min(top, bottom),
+        width: Math.abs(right - left), height: Math.abs(bottom - top),
+    };
+}
 
 function overlaps(
     rx1: number, ry1: number, rx2: number, ry2: number,
@@ -42,11 +118,8 @@ export function findShapesInRect(
     }
     for (const t of texts) {
         if (!t.code) continue;
-        const tLines = t.text.split('\n');
-        const maxLen = Math.max(...tLines.map(l => l.length));
-        const tw = maxLen * 22;
-        const th = (tLines.length - 1) * 48 + 40;
-        if (overlaps(rx1, ry1, rx2, ry2, t.x, t.y - 40, t.x + tw, t.y - 40 + th)) codes.add(t.code);
+        const b = getShapeBounds(t);
+        if (overlaps(rx1, ry1, rx2, ry2, b.x, b.y, b.x + b.width, b.y + b.height)) codes.add(t.code);
     }
     return codes;
 }
@@ -82,14 +155,10 @@ function hitLine(line: Line, x: number, y: number): boolean {
 }
 
 function hitText(text: Text, x: number, y: number): boolean {
-    const lines = text.text.split('\n');
-    const maxLen = Math.max(...lines.map(l => l.length));
-    const approxWidth = maxLen * 22;
+    const b = getShapeBounds(text);
     return (
-        x >= text.x - TOLERANCE &&
-        x <= text.x + approxWidth + TOLERANCE &&
-        y >= text.y - 40 - TOLERANCE &&
-        y <= text.y + (lines.length - 1) * 48 + TOLERANCE
+        x >= b.x - TOLERANCE && x <= b.x + b.width + TOLERANCE &&
+        y >= b.y - TOLERANCE && y <= b.y + b.height + TOLERANCE
     );
 }
 

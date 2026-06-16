@@ -1,9 +1,16 @@
 import { drawCircle, drawLine, drawPencil, drawRectangle } from "../utils/drawing";
 import { getRandomHexColor } from "../utils/virtual";
-import { Eraser, Line } from "../types/shape";
+import { Eraser, Line, Shape, Bounds, HandleId } from "../types/shape";
 import DrawRoom, { aggregatePencil } from "../drawRoom";
 import { render } from "./renderer";
-import { findHitTextShape, findShapesInRect } from "../utils/hitTest";
+import { findHitTextShape, findShapesInRect, hitResizeHandle, resizeBounds } from "../utils/hitTest";
+
+function cursorForHandle(h: HandleId): string {
+    if (h === 'nw' || h === 'se') return 'nwse-resize';
+    if (h === 'ne' || h === 'sw') return 'nesw-resize';
+    if (h === 'n' || h === 's') return 'ns-resize';
+    return 'ew-resize';
+}
 
 export class EventHandlers {
     private drawRoom: DrawRoom;
@@ -21,6 +28,11 @@ export class EventHandlers {
     private moveCodes: string[] = [];
     private moveTotalX: number = 0;
     private moveTotalY: number = 0;
+    private isResizing: boolean = false;
+    private activeHandle: HandleId | null = null;
+    private resizeOrigBounds: Bounds | null = null;
+    private resizePrevBounds: Bounds | null = null;
+    private resizeBefore: Shape[] | null = null;
 
     constructor(drawRoom: DrawRoom) {
             this.drawRoom = drawRoom;
@@ -39,7 +51,9 @@ export class EventHandlers {
 
     private updateCursor(): void {
         const canvas = this.drawRoom.getCanvas();
-        if (this.isMovingSelection) {
+        if (this.isResizing && this.activeHandle) {
+            canvas.style.cursor = cursorForHandle(this.activeHandle);
+        } else if (this.isMovingSelection) {
             canvas.style.cursor = 'move';
         } else if (this.isPanning) {
             canvas.style.cursor = 'grabbing';
@@ -79,7 +93,8 @@ export class EventHandlers {
         if (joined.trim()) {
             const text = {
                 x: ts.x, y: ts.y, shape: "text", text: joined,
-                color: this.drawRoom.getColor(), code: getRandomHexColor()
+                color: this.drawRoom.getColor(), code: getRandomHexColor(),
+                fontSize: ts.originalText?.fontSize ?? 40
             };
             this.drawRoom.setTexts(text);
             this.drawRoom.messageHandler.sendMessage(text);
@@ -222,11 +237,27 @@ export class EventHandlers {
             return;
         }
 
-        // Arrow tool → start drag selection
+        // Arrow tool → resize (if a handle is grabbed) or start drag selection
         if (event.button === 0 && tool === 'Arrow') {
-            this.drawRoom.clearSelection();
             const wx = this.toWorldX(event.clientX);
             const wy = this.toWorldY(event.clientY);
+
+            const bounds = this.drawRoom.getSelectedBounds();
+            if (bounds) {
+                const handle = hitResizeHandle(bounds, wx, wy, this.drawRoom.getScale());
+                if (handle) {
+                    const code = [...this.drawRoom.selectedCodes][0]!;
+                    this.isResizing = true;
+                    this.activeHandle = handle;
+                    this.resizeOrigBounds = bounds;
+                    this.resizePrevBounds = bounds;
+                    this.resizeBefore = this.drawRoom.getShapesByCode(code).map(s => structuredClone(s));
+                    this.updateCursor();
+                    return;
+                }
+            }
+
+            this.drawRoom.clearSelection();
             this.drawRoom.setInitX(wx);
             this.drawRoom.setInitY(wy);
             this.drawRoom.selectionRect = { x: wx, y: wy, width: 0, height: 0 };
@@ -247,6 +278,16 @@ export class EventHandlers {
     }
 
     mouseMove = (event: MouseEvent) => {
+        // Resize selected shape (Arrow tool, handle grabbed)
+        if (this.isResizing && this.activeHandle && this.resizeOrigBounds && this.resizePrevBounds) {
+            const wx = this.toWorldX(event.clientX);
+            const wy = this.toWorldY(event.clientY);
+            const newBounds = resizeBounds(this.activeHandle, this.resizeOrigBounds, wx, wy);
+            this.drawRoom.resizeSelected(this.resizePrevBounds, newBounds);
+            this.resizePrevBounds = newBounds;
+            return;
+        }
+
         // Move selected shapes (Hand tool with selection)
         if (this.isMovingSelection) {
             const scale = this.drawRoom.getScale();
@@ -284,6 +325,14 @@ export class EventHandlers {
             this.lastPanY = event.clientY;
             this.drawRoom.pan(dx, dy);
             return;
+        }
+
+        // Hover over a resize handle → directional cursor
+        if (!this.drawRoom.getPointerStatus() && this.drawRoom.getTool() === 'Arrow') {
+            const b = this.drawRoom.getSelectedBounds();
+            const h = b ? hitResizeHandle(b, this.toWorldX(event.clientX), this.toWorldY(event.clientY), this.drawRoom.getScale()) : null;
+            if (h) { this.drawRoom.getCanvas().style.cursor = cursorForHandle(h); return; }
+            this.drawRoom.getCanvas().style.cursor = 'default';
         }
 
         if (this.drawRoom.getPointerStatus()) {
@@ -349,6 +398,25 @@ export class EventHandlers {
     }
 
     mouseUp = (event: MouseEvent) =>{
+        // End resizing → broadcast + persist + record
+        if (this.isResizing) {
+            this.isResizing = false;
+            const code = [...this.drawRoom.selectedCodes][0];
+            if (code && this.resizeBefore) {
+                const after = this.drawRoom.getShapesByCode(code);
+                for (const s of after) this.drawRoom.messageHandler.sendMessage(s as never);
+                this.drawRoom.history.record({
+                    type: "update", before: this.resizeBefore, after: after.map(s => structuredClone(s)),
+                });
+            }
+            this.activeHandle = null;
+            this.resizeOrigBounds = null;
+            this.resizePrevBounds = null;
+            this.resizeBefore = null;
+            this.updateCursor();
+            return;
+        }
+
         // End moving selection
         if (this.isMovingSelection) {
             this.isMovingSelection = false;
@@ -356,6 +424,12 @@ export class EventHandlers {
                 this.drawRoom.history.record({
                     type: "move", codes: this.moveCodes, dx: this.moveTotalX, dy: this.moveTotalY
                 });
+                // Broadcast + persist moved shapes (move was previously local-only).
+                for (const c of this.moveCodes) {
+                    for (const s of this.drawRoom.getShapesByCode(c)) {
+                        this.drawRoom.messageHandler.sendMessage(s as never);
+                    }
+                }
             }
             this.moveCodes = [];
             this.moveTotalX = 0;
