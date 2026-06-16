@@ -1,5 +1,5 @@
 import { drawCircle, drawLine, drawPencil, drawRectangle } from "../utils/drawing";
-import { getRandomHexColor } from "../utils/virtual";
+import { generateCode } from "../utils/id";
 import { Eraser, Line, Shape, Bounds, HandleId } from "../types/shape";
 import DrawRoom, { aggregatePencil } from "../drawRoom";
 import { render } from "./renderer";
@@ -93,7 +93,7 @@ export class EventHandlers {
         if (joined.trim()) {
             const text = {
                 x: ts.x, y: ts.y, shape: "text", text: joined,
-                color: this.drawRoom.getColor(), code: getRandomHexColor(),
+                color: this.drawRoom.getColor(), code: generateCode(),
                 fontSize: ts.originalText?.fontSize ?? 40
             };
             this.drawRoom.setTexts(text);
@@ -272,7 +272,7 @@ export class EventHandlers {
 
         if (tool == "Pencil" || tool == "Line") {
             this.drawRoom.getCtx().fillStyle = this.drawRoom.getColor() || "#ffffff";
-            this.pencilCode = getRandomHexColor();
+            this.pencilCode = generateCode();
             if (tool == "Pencil") this.currentStroke = [];
         }
     }
@@ -474,7 +474,7 @@ export class EventHandlers {
                 height: this.toWorldY(event.clientY) - this.drawRoom.getInitY(),
                 shape: "rectangle",
                 color: this.drawRoom.getColor(),
-                code: getRandomHexColor()
+                code: generateCode()
             }
             this.drawRoom.setRectangles(rect);
             this.drawRoom.messageHandler.sendMessage(rect);
@@ -514,7 +514,7 @@ export class EventHandlers {
                 radius: this.toWorldX(event.clientX) - this.drawRoom.getInitX(),
                 shape: "circle",
                 color: this.drawRoom.getColor(),
-                code: getRandomHexColor()
+                code: generateCode()
             }
             this.drawRoom.setCircles(circle);
             this.drawRoom.messageHandler.sendMessage(circle);
@@ -528,7 +528,7 @@ export class EventHandlers {
                 toY: this.toWorldY(event.clientY),
                 shape: "line",
                 color: this.drawRoom.getColor(),
-                code: getRandomHexColor()
+                code: generateCode()
             }
             this.drawRoom.setLines(line);
             this.drawRoom.messageHandler.sendMessage(line);
