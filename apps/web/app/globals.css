@@ -1,3 +1,63 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ---- Landing page animations ---------------------------------------- */
+
+@keyframes cursorA {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(58px, 26px); }
+  50%  { transform: translate(34px, 70px); }
+  75%  { transform: translate(86px, 44px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes cursorB {
+  0%   { transform: translate(0, 0); }
+  30%  { transform: translate(-48px, 34px); }
+  60%  { transform: translate(-22px, -28px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes drawStroke {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
+  50%      { opacity: .7; box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+}
+
+.anim-cursorA   { animation: cursorA 9s ease-in-out infinite; }
+.anim-cursorB   { animation: cursorB 11s ease-in-out infinite; }
+.anim-floaty    { animation: floaty 6s ease-in-out infinite; }
+.anim-ticker    { animation: ticker 26s linear infinite; }
+.anim-live      { animation: livePulse 2s ease-in-out infinite; }
+.anim-draw      { stroke-dasharray: 1200; stroke-dashoffset: 1200; animation: drawStroke 3s ease-out forwards; }
+
+/* Subtle film grain over the dark background */
+.grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-cursorA, .anim-cursorB, .anim-floaty, .anim-ticker, .anim-live, .anim-draw {
+    animation: none;
+  }
+  .anim-draw { stroke-dashoffset: 0; }
+}
