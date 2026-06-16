@@ -45,6 +45,8 @@ export class EventHandlers {
             canvas.style.cursor = 'grabbing';
         } else if (this.isSpaceDown || this.drawRoom.getTool() === 'Hand') {
             canvas.style.cursor = this.drawRoom.selectedCodes.size > 0 ? 'move' : 'grab';
+        } else if (this.drawRoom.isLocked()) {
+            canvas.style.cursor = 'not-allowed';
         } else if (this.drawRoom.getTool() === 'Arrow') {
             canvas.style.cursor = 'default';
         } else {
@@ -185,6 +187,14 @@ export class EventHandlers {
         }
 
         const tool = this.drawRoom.getTool();
+
+        // Canvas locked → ignore everything except panning (middle mouse / Hand / Space)
+        if (
+            this.drawRoom.isLocked() &&
+            !(event.button === 1 || (event.button === 0 && (this.isSpaceDown || tool === 'Hand')))
+        ) {
+            return;
+        }
 
         // Hand tool + existing selection → move selection instead of pan
         if (event.button === 0 && (this.isSpaceDown || tool === 'Hand') && this.drawRoom.selectedCodes.size > 0) {

@@ -5,6 +5,7 @@ import {
   Eraser,
   Hand,
   Lock,
+  LockOpen,
   Minus,
   Plus,
   MousePointer2,
@@ -28,19 +29,61 @@ export default function Canvas({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [session, setSession] = useState<DrawRoom>();
   const [zoomLevel, setZoomLevel] = useState<number>(100);
+  const [activeTool, setActiveTool] = useState<string>("Arrow");
+  const [locked, setLocked] = useState<boolean>(false);
   //const [logo, setLogo] = useState<boolean>(true);
 
   const handleClick = (tool: string) => {
     session?.setTool(tool);
+    setActiveTool(tool);
+  };
+
+  const toggleLock = () => {
+    const next = !locked;
+    session?.setLocked(next);
+    setLocked(next);
+    toast.success(next ? "Canvas locked" : "Canvas unlocked");
   };
 
   const handleZoomChange = (scale: number) => {
     setZoomLevel(Math.round(scale * 100));
   };
 
+  const ToolButton = ({
+    tool,
+    label,
+    children,
+  }: {
+    tool: string;
+    label: string;
+    children: any;
+  }) => {
+    const isActive = activeTool === tool;
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          handleClick(tool);
+          toast.success(`${label} selected`);
+        }}
+        aria-label={label}
+        aria-pressed={isActive}
+        title={label}
+        className={`flex items-center justify-center size-9 rounded-lg transition-colors cursor-pointer ${
+          isActive
+            ? "bg-[#ECC19C] text-[#1C726D]"
+            : "text-[#ECC19C] hover:bg-[#ECC19C]/15"
+        }`}
+      >
+        {children}
+      </button>
+    );
+  };
+
   useEffect(() => {
     if (canvasRef.current) {
       const s = new DrawRoom(canvasRef.current, roomId, ws, handleZoomChange);
+      s.setTool("Arrow");
       setSession(s);
     }
 
@@ -115,68 +158,49 @@ export default function Canvas({
             />
           </Bar>
         </div>
-        <Bar classname="justify-between px-9 ">
-          <div className="flex items-center gap-10 h-full">
-            <MousePointer2
-              onClick={() => {
-                handleClick("Arrow");
-                toast.success("Select selected");
-              }}
-              className="cursor-pointer"
-            />
-            <Hand
-              onClick={() => {
-                handleClick("Hand");
-                toast.success("Pan selected");
-              }}
-              className="cursor-pointer"
-            />
-            <Lock className="cursor-pointer" />
-            <div className="border-l-2 border-[#ECC19C] h-[55%]"></div>
+        <Bar classname="justify-between px-6 gap-6">
+          <div className="flex items-center gap-2 h-full">
+            <ToolButton tool="Arrow" label="Select">
+              <MousePointer2 className="size-5" />
+            </ToolButton>
+            <ToolButton tool="Hand" label="Pan">
+              <Hand className="size-5" />
+            </ToolButton>
+            <button
+              type="button"
+              onClick={toggleLock}
+              aria-label={locked ? "Unlock canvas" : "Lock canvas"}
+              aria-pressed={locked}
+              title={locked ? "Unlock canvas" : "Lock canvas"}
+              className={`flex items-center justify-center size-9 rounded-lg transition-colors cursor-pointer ${
+                locked
+                  ? "bg-[#ECC19C] text-[#1C726D]"
+                  : "text-[#ECC19C] hover:bg-[#ECC19C]/15"
+              }`}
+            >
+              {locked ? <Lock className="size-5" /> : <LockOpen className="size-5" />}
+            </button>
+            <div className="border-l-2 border-[#ECC19C] h-[55%] mx-1"></div>
           </div>
-          <div className="flex gap-16 ml-10">
-            <Type
-              onClick={() => {
-                handleClick("Text");
-                toast.success("Text selected");
-              }}
-              className="cursor-pointer"
-            />
-            <Square
-              onClick={() => {
-                handleClick("Rectangle");
-                toast.success("Rectangle selected");
-              }}
-              className="cursor-pointer"
-            />
-            <Minus
-              onClick={() => {
-                handleClick("Line");
-                toast.success("Line selected");
-              }}
-              className="rotate-45 cursor-pointer"
-            />
-            <Circle
-              onClick={() => {
-                handleClick("Circle");
-                toast.success("Circle selected");
-              }}
-              className="cursor-pointer"
-            />
-            <Pencil
-              onClick={() => {
-                handleClick("Pencil");
-                toast.success("Pencil selected");
-              }}
-              className="cursor-pointer"
-            />
-            <Eraser
-              onClick={() => {
-                handleClick("Eraser");
-                toast.success("Eraser selected");
-              }}
-              className="cursor-pointer"
-            />
+          <div className="flex items-center gap-2">
+            <ToolButton tool="Text" label="Text">
+              <Type className="size-5" />
+            </ToolButton>
+            <ToolButton tool="Rectangle" label="Rectangle">
+              <Square className="size-5" />
+            </ToolButton>
+            <ToolButton tool="Line" label="Line">
+              <Minus className="size-5 rotate-45" />
+            </ToolButton>
+            <ToolButton tool="Circle" label="Circle">
+              <Circle className="size-5" />
+            </ToolButton>
+            <ToolButton tool="Pencil" label="Pencil">
+              <Pencil className="size-5" />
+            </ToolButton>
+            <ToolButton tool="Eraser" label="Eraser">
+              <Eraser className="size-5" />
+            </ToolButton>
           </div>
         </Bar>
         <Bar classname="px-5 gap-4">

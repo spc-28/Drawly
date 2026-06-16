@@ -23,6 +23,7 @@ export default class DrawRoom {
     private roomId: number;
     private userId: string | null = "";
     private tool: string = "";
+    private locked: boolean = false;
     public pointerStatus: boolean = false;
     private rectangles: Rectangle[] = [];
     private lines: Line[] = [];
@@ -99,6 +100,11 @@ export default class DrawRoom {
     getTool(): string { return this.tool; }
     setTool(value: string): void {
         this.tool = value;
+        this.eventHandler?.refreshCursor();
+    }
+    isLocked(): boolean { return this.locked; }
+    setLocked(value: boolean): void {
+        this.locked = value;
         this.eventHandler?.refreshCursor();
     }
     getPointerStatus(): boolean { return this.pointerStatus; }
